@@ -428,6 +428,16 @@ void SmoothMove::addDelay(int delayMS)
 }
 
 
+void SmoothMove::addExtrude( uint32_t positionSteps )
+{
+   moveBuffer[newBlockIndex].extrudePosition = positionSteps;
+
+   float extrudeLength = float( positionSteps - moveBuffer[previousBlockIndex()].extrudePosition );
+   moveBuffer[newBlockIndex].extrudeScaleFactor = extrudeLength / moveBuffer[newBlockIndex].length;
+
+}
+
+
 void SmoothMove::setMaxStartVel(const int & index)
 {
    int prevBlock = previousBlockIndex(index);
@@ -636,6 +646,12 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
 }
 
 
+uint32_t SmoothMove::getExtrudeLocation()
+{
+   return moveBuffer[previousBlockIndex()].extrudePosition + uint32_t( moveBuffer[currentBlockIndex()].extrudeScaleFactor * position );
+}
+
+
 void SmoothMove::getPos(float & x, float & y, float & z, const int & index, const float & position)
 {
    float angle;
@@ -694,9 +710,15 @@ void SmoothMove::removeOldBlock()
 
 int SmoothMove::AddNewBlockIndex()
 {
-   newBlockIndex = nextBlockIndex(newBlockIndex);
+   newBlockIndex = nextBlockIndex();
    blockCount++;
 
+   return newBlockIndex;
+}
+
+
+int SmoothMove::currentBlockIndex()  // 
+{
    return newBlockIndex;
 }
 
@@ -710,12 +732,24 @@ int SmoothMove::nextBlockIndex(int currentIndex)  // direction of travel
 }
 
 
+int SmoothMove::nextBlockIndex()  // direction of travel (assumes relation to newest block)
+{
+   return nextBlockIndex(newBlockIndex);
+}
+
+
 int SmoothMove::previousBlockIndex(int currentIndex) // against direction of travel
 {
    if(currentIndex < bufferCount - 1) 
       return currentIndex + 1;
       
    return 0;
+}
+
+
+int SmoothMove::previousBlockIndex() // against direction of travel (assumes relation to newest block)
+{
+   return previousBlockIndex(newBlockIndex);
 }
 
 

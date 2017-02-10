@@ -30,16 +30,20 @@
          ~SmoothMove();
          
          bool bufferVacancy();
-         void addLinear_Block(int type, float _x, float _y, float _z, float _feed);
-         void addArc_Block(   int type, float _x, float _y, float _feed, float centerX, float centerY);
-         void addDelay(int delayMS);
+         
+         void addLinear_Block( int type, float _x, float _y, float _z, float _feed );
+         void addArc_Block(    int type, float _x, float _y, float _feed, float centerX, float centerY );
+         void addDelay( int delayMS );
+         void addExtrude( uint32_t positionSteps );
 
-         void startMoving(float _x, float _y, float _z);
+         void startMoving( float _x, float _y, float _z );
          void stopMoving();
          
          void advancePostion();
          
-         void getTargetLocation(float & x, float & y, float & z);
+         void getTargetLocation( float & x, float & y, float & z );
+         uint32_t getExtrudeLocationSteps();
+         
          int  getBlockCount();
 
          
@@ -102,6 +106,9 @@
             
             float accelEndPoint, velEndPoint, decelLength; // length of each segement
             uint32_t accelTime,  velTime,     decelTime;   // time to complete each segement
+
+            uint32_t extrudePosition;
+            float extrudeScaleFactor;
             
             int exactStopDelay;
             
@@ -143,8 +150,12 @@
          void removeOldBlock();
                   
          int previousBlockIndex(int currentIndex);
+         int previousBlockIndex();
+
          int previousSegmentIndex(int currentIndex);
+
          int nextBlockIndex(int currentIndex);
+         int nextBlockIndex();
          
          void setMaxStartVel(const int & index);
          void getPos(   float & x, float & y, float & z, const int & index, const float & position);
