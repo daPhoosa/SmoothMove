@@ -129,6 +129,7 @@ void SmoothMove::startMoving(float _x, float _y, float _z) //
 
    totalDistance = 0.0f;
    
+   motionPaused  = false;
    motionStopped = false; 
    segmentIndex = 0;
    segmentTime = 0.0f;
@@ -139,6 +140,18 @@ void SmoothMove::startMoving(float _x, float _y, float _z) //
 void SmoothMove::stopMoving() // 
 {
    motionStopped = true; 
+}
+
+
+void SmoothMove::pause() // 
+{
+   motionPaused = true; 
+}
+
+
+void SmoothMove::resume() // 
+{
+   motionPaused = false; 
 }
 
 
@@ -268,6 +281,8 @@ bool SmoothMove::checkExactStop()
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
+   if( motionPaused ) return false; // dont accept new blocks if motion is paused
+
    if( blockCount < bufferCount - 1 ) return true;
 
    return false;

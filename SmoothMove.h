@@ -38,6 +38,8 @@
 
          void startMoving( float _x, float _y, float _z );
          void stopMoving();
+         void pause();
+         void resume();
          
          void advancePostion();
          
@@ -133,7 +135,7 @@
          uint32_t exactStopEndTime, exactStopDelay;
          bool exactStopActive;         
          
-         bool motionStopped;
+         bool motionStopped, motionPaused;
          
          float totalDistance, totalTime;
          
