@@ -648,7 +648,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
 
 uint32_t SmoothMove::getExtrudeLocation()
 {
-   return moveBuffer[previousBlockIndex()].extrudePosition + uint32_t( moveBuffer[currentBlockIndex()].extrudeScaleFactor * position );
+   return moveBuffer[previousBlockIndex(currentBlockIndex)].extrudePosition + uint32_t( moveBuffer[currentBlockIndex].extrudeScaleFactor * position );
 }
 
 
@@ -717,12 +717,6 @@ int SmoothMove::AddNewBlockIndex()
 }
 
 
-int SmoothMove::currentBlockIndex()  // 
-{
-   return newBlockIndex;
-}
-
-
 int SmoothMove::nextBlockIndex(int currentIndex)  // direction of travel
 {
    if(currentIndex > 0) 
@@ -732,24 +726,12 @@ int SmoothMove::nextBlockIndex(int currentIndex)  // direction of travel
 }
 
 
-int SmoothMove::nextBlockIndex()  // direction of travel (assumes relation to newest block)
-{
-   return nextBlockIndex(newBlockIndex);
-}
-
-
 int SmoothMove::previousBlockIndex(int currentIndex) // against direction of travel
 {
    if(currentIndex < bufferCount - 1) 
       return currentIndex + 1;
       
    return 0;
-}
-
-
-int SmoothMove::previousBlockIndex() // against direction of travel (assumes relation to newest block)
-{
-   return previousBlockIndex(newBlockIndex);
 }
 
 
