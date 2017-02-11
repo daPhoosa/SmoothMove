@@ -36,8 +36,6 @@ SmoothMove::SmoothMove( float _accel, float _velMax )
    
    cornerRoundDist = 0.1f;
    cornerRoundDistSq = cornerRoundDist * cornerRoundDist;
-
-   lookAheadTimeMin = ( _velMax * 1000000.0f ) / _accel + 50000.0f; // time in [us]
    
    motionStopped = true;
 }
@@ -290,6 +288,7 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 
    if( blockCount < 3 ) return true; // try to maintain 3 block look ahead minimum
 
+   uint32_t lookAheadTimeMin = uint32_t(( velocityNow * accelInverse + 0.050f ) * 1000000.0f ); // time in [us]
    if( lookAheadTime > lookAheadTimeMin ) return false; // avoid excessive look ahead by time
 
    if( blockCount < bufferCount - 1 ) return true; // don't exceed max buffer size

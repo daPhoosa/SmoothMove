@@ -26,8 +26,8 @@
             "name": "Win32",
             "includePath": [
                 "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
-                "C:/Program Files (x86)/Arduino/hardware/arduino/avr/cores/arduino/*",
-                "C:/Program Files (x86)/Arduino/hardware/tools/avr/avr/include/*"
+                "C:/Arduino/hardware/arduino/avr/cores/arduino/*",
+                "C:/Arduino/hardware/tools/avr/avr/include/*"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
