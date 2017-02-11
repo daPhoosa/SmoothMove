@@ -129,6 +129,7 @@ void SmoothMove::startMoving(float _x, float _y, float _z) //
 
    totalDistance = 0.0f;
    
+   motionPaused  = false;
    motionStopped = false; 
    segmentIndex = 0;
    segmentTime = 0.0f;
@@ -139,6 +140,18 @@ void SmoothMove::startMoving(float _x, float _y, float _z) //
 void SmoothMove::stopMoving() // 
 {
    motionStopped = true; 
+}
+
+
+void SmoothMove::pause() // 
+{
+   motionPaused = true; 
+}
+
+
+void SmoothMove::resume() // 
+{
+   motionPaused = false; 
 }
 
 
@@ -268,6 +281,8 @@ bool SmoothMove::checkExactStop()
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
+   if( motionPaused ) return false; // dont accept new blocks if motion is paused
+
    if( blockCount < bufferCount - 1 ) return true;
 
    return false;
@@ -425,6 +440,16 @@ void SmoothMove::addDelay(int delayMS)
    {
       moveBuffer[newBlockIndex].exactStopDelay = 0;
    }   
+}
+
+
+void SmoothMove::addExtrude( uint32_t positionSteps )
+{
+   moveBuffer[newBlockIndex].extrudePosition = positionSteps;
+
+   float extrudeLength = float( positionSteps - moveBuffer[previousBlockIndex()].extrudePosition );
+   moveBuffer[newBlockIndex].extrudeScaleFactor = extrudeLength / moveBuffer[newBlockIndex].length;
+
 }
 
 
@@ -636,6 +661,12 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
 }
 
 
+uint32_t SmoothMove::getExtrudeLocation()
+{
+   return moveBuffer[previousBlockIndex(currentBlockIndex)].extrudePosition + uint32_t( moveBuffer[currentBlockIndex].extrudeScaleFactor * position );
+}
+
+
 void SmoothMove::getPos(float & x, float & y, float & z, const int & index, const float & position)
 {
    float angle;
@@ -694,7 +725,7 @@ void SmoothMove::removeOldBlock()
 
 int SmoothMove::AddNewBlockIndex()
 {
-   newBlockIndex = nextBlockIndex(newBlockIndex);
+   newBlockIndex = nextBlockIndex();
    blockCount++;
 
    return newBlockIndex;
