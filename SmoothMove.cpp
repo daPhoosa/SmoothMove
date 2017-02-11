@@ -32,10 +32,13 @@ SmoothMove::SmoothMove( float _accel, float _velMax )
    accelInverseHalf = 0.5f * accelInverse;
    accelDouble  = 2.0f * _accel;
    
-   maxVel       = _velMax;
+   maxVel       = abs( _velMax );
    
    cornerRoundDist = 0.1f;
    cornerRoundDistSq = cornerRoundDist * cornerRoundDist;
+
+   motionFeedOverride  = 1.0f;
+   extrudeRateOverride = 1.0f;
    
    motionStopped = true;
 }
@@ -288,7 +291,7 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 
    if( blockCount < 3 ) return true; // try to maintain 3 block look ahead minimum
 
-   uint32_t lookAheadTimeMin = uint32_t(( velocityNow * accelInverse + 0.050f ) * 1000000.0f ); // time in [us]
+   uint32_t lookAheadTimeMin = uint32_t(( velocityNow * accelInverse + 0.050f ) * 1000000.0f ); // time to decel to zero plus 50ms in [us]
    if( lookAheadTime > lookAheadTimeMin ) return false; // avoid excessive look ahead by time
 
    if( blockCount < bufferCount - 1 ) return true; // don't exceed max buffer size
@@ -303,11 +306,16 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
    
    if(type == 1)
    {
-      moveBuffer[index].moveType = Linear; // feed move G1
+      moveBuffer[index].moveType = Linear;     // feed move G1
+
+      _feed = abs( _feed ) * motionFeedOverride; // apply feed rate override
+      _feed = constrain( _feed, 0.01f, maxVel);  // constrain to reasonable limits
    }
    else
    {
       moveBuffer[index].moveType = Rapid; // rapid move G0
+
+      _feed = maxVel;  // rapids always aims for max vel
    }
 
    moveBuffer[index].X_start = X_end; // set start point to previous blocks end point
@@ -337,7 +345,7 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
       moveBuffer[index].Z_vector = 0.0f;         
    }
    
-   moveBuffer[index].targetVel    = min(_feed, maxVel);
+   moveBuffer[index].targetVel    = min( _feed, maxVel);  // apply feed rate override and constrain
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
    
    setMaxStartVel(index);  // set cornering/start speed
@@ -427,7 +435,8 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    moveBuffer[index].Y_vector = centerY;
    moveBuffer[index].Z_vector = 0.0f;
    
-   _feed = min(_feed, sqrt(maxAccel * moveBuffer[index].radius));  // limit feed rate to prevent excessive radial acceleration
+   _feed = abs( _feed ) * motionFeedOverride;  // apply feed rate override
+   _feed = constrain( _feed, 0.01f, sqrt(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
    moveBuffer[index].targetVel    = min(_feed, maxVel);
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
    
@@ -716,6 +725,20 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
 int SmoothMove::getBlockCount()
 {
    return blockCount;
+}
+
+
+float setMotionRateOverride(  float scale )
+{
+   motionFeedOverride = constrain( scale, 0.1f, 2.0f );
+   return motionFeedOverride;
+}
+
+
+float setExtrudeRateOverride( float scale )
+{
+   extrudeRateOverride = constrain( scale, 0.1f, 2.0f );
+   return extrudeRateOverride;
 }
 
 

@@ -40,6 +40,9 @@
          void stopMoving();
          void pause();
          void resume();
+
+         float setMotionRateOverride(  float scale );
+         float setExtrudeRateOverride( float scale );
          
          void advancePostion();
          
@@ -109,7 +112,7 @@
             float accelEndPoint, velEndPoint, decelLength; // length of each segement
             uint32_t accelTime,  velTime,     decelTime;   // time to complete each segement
 
-            uint32_t extrudePosition;
+            uint32_t extrudePositionActual, extrudePositionProgram;
             float extrudeScaleFactor;
             
             int exactStopDelay;
@@ -120,6 +123,7 @@
          float xVel[bufferCount];      // velocity at block boundarys
          float xVel_Sq[bufferCount];   // boundary velocities squared
          
+         float motionFeedOverride, extrudeRateOverride;
 
          float blockPosition, velocityNow;
          
