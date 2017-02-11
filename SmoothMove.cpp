@@ -21,7 +21,7 @@
 #include "SmoothMove.h"
 
 
-SmoothMove::SmoothMove(float _accel, float _velMax)
+SmoothMove::SmoothMove( float _accel, float _velMax )
 {   
    currentBlockIndex = 0;
    newBlockIndex = 0;
@@ -36,6 +36,8 @@ SmoothMove::SmoothMove(float _accel, float _velMax)
    
    cornerRoundDist = 0.1f;
    cornerRoundDistSq = cornerRoundDist * cornerRoundDist;
+
+   lookAheadTimeMin = ( _velMax * 1000000.0f ) / _accel + 50000.0f; // time in [us]
    
    motionStopped = true;
 }
@@ -47,7 +49,7 @@ SmoothMove::~SmoothMove()
 }
 
 
-void SmoothMove::startMoving(float _x, float _y, float _z) // 
+void SmoothMove::startMoving( float _x, float _y, float _z ) // 
 {
    //Serial.println(blockCount);
 
@@ -180,20 +182,23 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
          
          switch(segmentIndex)
          {
-            case 2 : // switch to Accel
+            case 2 : // switch to ACCELERATION
                totalDistance += moveBuffer[currentBlockIndex].length;
+               lookAheadTime -= moveBuffer[currentBlockIndex].decelTime; // remove previous segement time
                removeOldBlock(); // previous block complete, index to next block
-               
+
                segmentTime = moveBuffer[currentBlockIndex].accelTime;
                segmentIndex = 0;
                break;
                
-            case 0 : // switch to Const Vel
+            case 0 : // switch to CONST VELOCITY
+               lookAheadTime -= moveBuffer[currentBlockIndex].accelTime; // remove previous segement time
                segmentTime = moveBuffer[currentBlockIndex].velTime;
                segmentIndex = 1;
                break;
             
-            case 1 : // switch to Decel
+            case 1 : // switch to DECELERATION
+               lookAheadTime -= moveBuffer[currentBlockIndex].velTime;   // remove previous segement time
                segmentTime = moveBuffer[currentBlockIndex].decelTime;
                segmentIndex = 2;
                break;
@@ -281,9 +286,13 @@ bool SmoothMove::checkExactStop()
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
-   if( motionPaused ) return false; // dont accept new blocks if motion is paused
+   if( motionPaused ) return false;  // dont accept new blocks if motion is paused
 
-   if( blockCount < bufferCount - 1 ) return true;
+   if( blockCount < 3 ) return true; // try to maintain 3 block look ahead minimum
+
+   if( lookAheadTime > lookAheadTimeMin ) return false; // avoid excessive look ahead by time
+
+   if( blockCount < bufferCount - 1 ) return true; // don't exceed max buffer size
 
    return false;
 }
@@ -337,6 +346,9 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
    moveBuffer[index].exactStopDelay = 0;
 
    constAccelTrajectory();
+
+   lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
+   moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
    
    //displayBlock(index);
    
@@ -425,6 +437,9 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    moveBuffer[index].exactStopDelay = 0;
    
    constAccelTrajectory();
+
+   lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
+   moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
    
    //displayBlock(index);
 }
@@ -725,14 +740,14 @@ void SmoothMove::removeOldBlock()
 
 int SmoothMove::AddNewBlockIndex()
 {
-   newBlockIndex = nextBlockIndex();
+   newBlockIndex = nextBlockIndex( newBlockIndex );
    blockCount++;
 
    return newBlockIndex;
 }
 
 
-int SmoothMove::nextBlockIndex(int currentIndex)  // direction of travel
+int SmoothMove::nextBlockIndex( int currentIndex )  // direction of travel
 {
    if(currentIndex > 0) 
       return currentIndex - 1;
@@ -741,7 +756,7 @@ int SmoothMove::nextBlockIndex(int currentIndex)  // direction of travel
 }
 
 
-int SmoothMove::previousBlockIndex(int currentIndex) // against direction of travel
+int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of travel
 {
    if(currentIndex < bufferCount - 1) 
       return currentIndex + 1;
@@ -750,7 +765,7 @@ int SmoothMove::previousBlockIndex(int currentIndex) // against direction of tra
 }
 
 
-void SmoothMove::displayBlock(int i)
+void SmoothMove::displayBlock( int i )
 {
 
    Serial.print(i);Serial.print("\t");

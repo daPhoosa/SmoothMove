@@ -138,6 +138,7 @@
          bool motionStopped, motionPaused;
          
          float totalDistance, totalTime;
+         uint32_t lookAheadTime, lookAheadTimeMin;
          
          uint32_t segmentStartTime, segmentTime, startOffset;
 
