@@ -136,7 +136,7 @@
          float maxAccel, accelInverse, accelInverseHalf, accelDouble;
          float maxVel;
          
-         uint32_t exactStopEndTime, exactStopDelay;
+         uint32_t exactStopEndTime, exactStopDelay, exactStopSmoothingDelay;
          bool exactStopActive;         
          
          bool motionStopped, motionPaused;
@@ -150,24 +150,25 @@
          // *** PRIVATE FUNCTIONS ***
          void constAccelTrajectory();
          
-         void startExactStop(int index);
+         void startExactStop( int index );
          bool checkExactStop();
          
+         int addBaseBlock( const float & _x, const float & _y, const float & _z );
          int AddNewBlockIndex();
          void removeOldBlock();
                   
-         int previousBlockIndex(int currentIndex);
+         int previousBlockIndex( int currentIndex );
          int previousBlockIndex();
 
-         int previousSegmentIndex(int currentIndex);
+         int previousSegmentIndex( int currentIndex );
 
-         int nextBlockIndex(int currentIndex);
+         int nextBlockIndex( int currentIndex );
          int nextBlockIndex();
          
-         void setMaxStartVel(const int & index);
-         void getPos(   float & x, float & y, float & z, const int & index, const float & position);
+         void setMaxStartVel( const int & index );
+         void getPos( float & x, float & y, float & z, const int & index, const float & position );
          
-         void displayBlock(int i);
+         void displayBlock( int i );
 
    };
 

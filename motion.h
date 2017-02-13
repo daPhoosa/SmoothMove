@@ -433,41 +433,60 @@ void SmoothMove::constAccelTrajectory()
 
 void SmoothMove::getTargetLocation(float & x, float & y, float & z)
 {
-   int index = currentBlockIndex;
 
-   if(blockCount < 1) index = previousBlockIndex(currentBlockIndex); // end point of last block
+   if(blockCount == 0) // if no blocks are queued up, return current end point
+   {
+      x = X_end;
+      y = Y_end;
+      z = Z_end;
+      return;
+   } 
+
+   int index = currentBlockIndex;
    
-   getPos( x, y, z, index, blockPosition);
+   getPos( x, y, z, index, blockPosition); // position of the primary (trailing) smoothing point
    
    float x2, y2, z2;
-   float lookAhead = min(velocityNow * .05, cornerRoundDist * 2.0f) + blockPosition;  // min() is kludge to prevent massive jerk after exact stop
-   
-   if(blockCount < 2 || moveBuffer[index].exactStopDelay)
+   float lookAheadDist;
+
+   if( exactStopActive )
    {
-      lookAhead = min(lookAhead, moveBuffer[index].length); // don't look past the end of the current segment
+      uint32_t timeToEnd = exactStopEndTime - micros();
+      if( timeToEnd < exactStopSmoothingDelay )
+      {
+         float t = float( exactStopSmoothingDelay - timeToEnd ) * 0.000001f;
+         lookAheadDist = 0.5f * maxAccel * t * t;
+      } 
+      else
+      {
+         lookAheadDist = 0.0f; 
+      }
    }
-   else if( lookAhead > moveBuffer[index].length )
+   else
    {
-      lookAhead -= moveBuffer[index].length;
+      lookAheadDist = 2.0f * cornerRoundDist + blockPosition;  // normal look ahead
+   }
+
+   int thisBlockCount = blockCount;
+
+   while( lookAheadDist > moveBuffer[index].length && thisBlockCount > 0 && !moveBuffer[index].exactStopDelay );
+   {
+      lookAheadDist -= moveBuffer[index].length;
       index = nextBlockIndex(index);
+      thisBlockCount--;
    }
+
+   lookAhead = min(lookAheadDist, moveBuffer[index].length); // don't look past the end of the next/last segment
    
-   getPos( x2, y2, z2, index, lookAhead);
+   getPos( x2, y2, z2, index, lookAhead); // position of look ahead (leading) smoothing point
    
-   x = ( x + x2 ) * 0.5f;
+   x = ( x + x2 ) * 0.5f; // average the two smoothing points
    y = ( y + y2 ) * 0.5f;
    z = ( z + z2 ) * 0.5f;
-
 }
 
 
-uint32_t SmoothMove::getExtrudeLocation()
-{
-   return moveBuffer[previousBlockIndex(currentBlockIndex)].extrudePosition + uint32_t( moveBuffer[currentBlockIndex].extrudeScaleFactor * position );
-}
-
-
-void SmoothMove::getPos(float & x, float & y, float & z, const int & index, const float & position)
+void SmoothMove::getPos(float & x, float & y, float & z, const int & index, const float & position)  // maps from accel trajectory to 3D space
 {
    float angle;
    
@@ -493,9 +512,15 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
          angle += moveBuffer[index].startAngle;
          x = moveBuffer[index].X_vector + moveBuffer[index].radius * cos(angle);
          y = moveBuffer[index].Y_vector + moveBuffer[index].radius * sin(angle);
-         z = moveBuffer[index].Z_start;   
+         z = moveBuffer[index].Z_vector * position + moveBuffer[index].Z_start;
          break;
    }
+}
+
+
+uint32_t SmoothMove::getExtrudeLocation()
+{
+   return moveBuffer[previousBlockIndex(currentBlockIndex)].extrudePosition + uint32_t( moveBuffer[currentBlockIndex].extrudeScaleFactor * position );
 }
 
 

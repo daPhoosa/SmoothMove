@@ -35,36 +35,30 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 
 void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _feed)
 {
-   int index = AddNewBlockIndex();
+   int index = addBaseBlock( _x, _y, _z );
    
    if(type == 1)
    {
       moveBuffer[index].moveType = Linear;     // feed move G1
 
       _feed = abs( _feed ) * motionFeedOverride; // apply feed rate override
-      _feed = constrain( _feed, 0.01f, maxVel);  // constrain to reasonable limits
+      moveBuffer[index].targetVel = constrain( _feed, 0.01f, maxVel);  // constrain to reasonable limits
    }
    else
    {
       moveBuffer[index].moveType = Rapid; // rapid move G0
 
-      _feed = maxVel;  // rapids always aims for max vel
+      moveBuffer[index].targetVel = maxVel;  // rapids always aim for max vel
    }
 
-   moveBuffer[index].X_start = X_end; // set start point to previous blocks end point
-   moveBuffer[index].Y_start = Y_end;
-   moveBuffer[index].Z_start = Z_end; 
-   
-   X_end = _x; // save this block's end point
-   Y_end = _y;
-   Z_end = _z; 
+   moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
 
    float dx = _x - moveBuffer[index].X_start;  
    float dy = _y - moveBuffer[index].Y_start;
    float dz = _z - moveBuffer[index].Z_start;
    moveBuffer[index].length = sqrt(dx * dx + dy * dy + dz * dz);
    
-   if(moveBuffer[index].length > 0.0001f)
+   if(moveBuffer[index].length > 0.001f)
    {
       float inverseLength = 1.0f / moveBuffer[index].length;
       moveBuffer[index].X_vector = dx * inverseLength;  // line unit vector
@@ -78,9 +72,6 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
       moveBuffer[index].Z_vector = 0.0f;         
    }
    
-   moveBuffer[index].targetVel    = min( _feed, maxVel);  // apply feed rate override and constrain
-   moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
-   
    setMaxStartVel(index);  // set cornering/start speed
    
    moveBuffer[index].exactStopDelay = 0;
@@ -88,17 +79,13 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
    constAccelTrajectory();
 
    lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
-   moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
-   
-   //displayBlock(index);
-   
-   //Serial.println("");
+
 }
 
 
 void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float centerX, float centerY)
 {
-   int index = AddNewBlockIndex();
+   int index = addBaseBlock( _x, _y, Z_end );
 
    if(type == 2)
    {
@@ -108,16 +95,7 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    {
       moveBuffer[index].moveType = ArcCCW; // Counter-Clockwise Arc G3
    }
-   
-
-   moveBuffer[index].X_start = X_end; // set start point to previous blocks end point
-   moveBuffer[index].Y_start = Y_end;
-   moveBuffer[index].Z_start = Z_end; 
-   
-   X_end = _x; // save this block's end point
-   Y_end = _y;
-   //  Z_end doesn't change
-
+ 
    float dXstart = moveBuffer[index].X_start - centerX;
    float dYstart = moveBuffer[index].Y_start - centerY;
    
@@ -148,17 +126,13 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    {
       arcAngle += 6.2831853f;     
    }
-   
-   //Serial.println(moveBuffer[index].startAngle);
-   //Serial.println(endAngle);
-   //Serial.println(arcAngle);
-   
+
    moveBuffer[index].length = arcAngle * moveBuffer[index].radius;
    
    float endRadiusSq = dXend * dXend + dYend * dYend;
 
    // check start and end point consistency
-   if( abs( startRadiusSq - endRadiusSq ) > 0.00625f)
+   if( abs( startRadiusSq - endRadiusSq ) > 0.000645f)
    {
       Serial.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
       while(true); // probably a better way to do this
@@ -170,19 +144,36 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    
    _feed = abs( _feed ) * motionFeedOverride;  // apply feed rate override
    _feed = constrain( _feed, 0.01f, sqrt(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
-   moveBuffer[index].targetVel    = min(_feed, maxVel);
+   moveBuffer[index].targetVel    = min( _feed, maxVel );
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
    
    setMaxStartVel(index);  // set cornering/start speed
-   
-   moveBuffer[index].exactStopDelay = 0;
    
    constAccelTrajectory();
 
    lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
    moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
    
-   //displayBlock(index);
+}
+
+
+int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & _z )  // called to perform operations shared by all addBlock functions
+{
+   int index = AddNewBlockIndex();
+
+   moveBuffer[index].X_start = X_end; // set start point to previous blocks end point
+   moveBuffer[index].Y_start = Y_end;
+   moveBuffer[index].Z_start = Z_end; 
+   
+   X_end = _x; // save this block's end point
+   Y_end = _y;
+   Z_end = _z; 
+
+   moveBuffer[index].exactStopDelay = 0;  // assume continuous motion
+
+   moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
+
+   return index;
 }
 
 
@@ -190,11 +181,11 @@ void SmoothMove::addDelay(int delayMS)
 {
    if(delayMS > 0)
    {
-      moveBuffer[newBlockIndex].exactStopDelay = (delayMS - 1) * 1000 + 1;
+      moveBuffer[newBlockIndex].exactStopDelay = min( delayMS, (exactStopSmoothingDelay + 500) / 1000 );
    }
    else
    {
-      moveBuffer[newBlockIndex].exactStopDelay = 0;
+      moveBuffer[newBlockIndex].exactStopDelay = (exactStopSmoothingDelay + 500) / 1000;
    }   
 }
 
