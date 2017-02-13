@@ -418,8 +418,8 @@ void SmoothMove::constAccelTrajectory()
          }         
       }
       
-      //Serial.print("=F=> ");
-      //displayBlock(exit);
+      Serial.print("=F=> ");
+      displayBlock(exit);
       
       // decrement pointers
       exit--;
@@ -428,6 +428,7 @@ void SmoothMove::constAccelTrajectory()
       if(exit  < 0) exit  = bufferCount - 1;  // wrap buffer pointer
       if(start < 0) start = bufferCount - 1;  // wrap buffer pointer   
    }   
+
 }
 
 
@@ -452,7 +453,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
    if( exactStopActive )
    {
       uint32_t timeToEnd = exactStopEndTime - micros();
-      if( timeToEnd < exactStopSmoothingDelay )
+      if( timeToEnd < exactStopSmoothingDelay )  // allow early release of look ahead for smoothing
       {
          float t = float( exactStopSmoothingDelay - timeToEnd ) * 0.000001f;
          lookAheadDist = 0.5f * maxAccel * t * t;
@@ -476,9 +477,9 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
       thisBlockCount--;
    }
 
-   lookAhead = min(lookAheadDist, moveBuffer[index].length); // don't look past the end of the next/last segment
+   lookAheadDist = min(lookAheadDist, moveBuffer[index].length); // don't look past the end of the next/last segment
    
-   getPos( x2, y2, z2, index, lookAhead); // position of look ahead (leading) smoothing point
+   getPos( x2, y2, z2, index, lookAheadDist); // position of look ahead (leading) smoothing point
    
    x = ( x + x2 ) * 0.5f; // average the two smoothing points
    y = ( y + y2 ) * 0.5f;
@@ -518,20 +519,20 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
 }
 
 
-uint32_t SmoothMove::getExtrudeLocation()
+uint32_t SmoothMove::getExtrudeLocationSteps()
 {
-   return moveBuffer[previousBlockIndex(currentBlockIndex)].extrudePosition + uint32_t( moveBuffer[currentBlockIndex].extrudeScaleFactor * position );
+   return moveBuffer[previousBlockIndex(currentBlockIndex)].extrudePosition + uint32_t( moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition );
 }
 
 
-float setMotionRateOverride(  float scale )
+float SmoothMove::setMotionRateOverride(  float scale )
 {
    motionFeedOverride = constrain( scale, 0.1f, 2.0f );
    return motionFeedOverride;
 }
 
 
-float setExtrudeRateOverride( float scale )
+float SmoothMove::setExtrudeRateOverride( float scale )
 {
    extrudeRateOverride = constrain( scale, 0.1f, 2.0f );
    return extrudeRateOverride;

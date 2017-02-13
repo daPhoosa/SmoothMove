@@ -112,7 +112,7 @@
             float accelEndPoint, velEndPoint, decelLength; // length of each segement
             uint32_t accelTime,  velTime,     decelTime;   // time to complete each segement
 
-            uint32_t extrudePositionActual, extrudePositionProgram;
+            uint32_t extrudePosition, extrudePositionProgram;
             float extrudeScaleFactor;
             
             int exactStopDelay;
