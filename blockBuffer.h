@@ -173,8 +173,6 @@ int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & 
 
    moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
 
-   Serial.println("");
-
    return index;
 }
 

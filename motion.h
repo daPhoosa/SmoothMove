@@ -108,7 +108,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
 }
 
 
-void SmoothMove::stopMoving() // 
+void SmoothMove::abortMotion() // 
 {
    motionStopped = true; 
 }
@@ -122,6 +122,10 @@ void SmoothMove::pause() //
 
 void SmoothMove::resume() // 
 {
+   // add minimum delay to allow for smooth start
+   addDelay(1);
+   startExactStop(currentBlockIndex);
+
    motionPaused = false; 
 }
 
@@ -153,22 +157,22 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
          {
             case 2 : // switch to ACCELERATION
                totalDistance += moveBuffer[currentBlockIndex].length;
-               lookAheadTime -= moveBuffer[currentBlockIndex].decelTime; // remove previous segement time
                removeOldBlock(); // previous block complete, index to next block
 
-               segmentTime = moveBuffer[currentBlockIndex].accelTime;
+               segmentTime    = moveBuffer[currentBlockIndex].accelTime;
+               lookAheadTime -= moveBuffer[currentBlockIndex].accelTime; // segment time is removed as soon as the segment is started
                segmentIndex = 0;
                break;
                
             case 0 : // switch to CONST VELOCITY
-               lookAheadTime -= moveBuffer[currentBlockIndex].accelTime; // remove previous segement time
-               segmentTime = moveBuffer[currentBlockIndex].velTime;
+               segmentTime    = moveBuffer[currentBlockIndex].velTime;
+               lookAheadTime -= moveBuffer[currentBlockIndex].velTime;
                segmentIndex = 1;
                break;
             
             case 1 : // switch to DECELERATION
-               lookAheadTime -= moveBuffer[currentBlockIndex].velTime;   // remove previous segement time
-               segmentTime = moveBuffer[currentBlockIndex].decelTime;
+               segmentTime    = moveBuffer[currentBlockIndex].decelTime;
+               lookAheadTime -= moveBuffer[currentBlockIndex].decelTime;
                segmentIndex = 2;
                break;
          }
@@ -295,6 +299,8 @@ void SmoothMove::constAccelTrajectory()
    
    xVel[exit]    = 0.0f;   // newest block always ends at zero 
    xVel_Sq[exit] = 0.0f;
+
+   Serial.println("");
    
    for(int i = blockCount - 1; i > 0 ; i--)
    {
@@ -470,7 +476,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
 
    int thisBlockCount = blockCount;
 
-   while( lookAheadDist > moveBuffer[index].length && thisBlockCount > 0 && !moveBuffer[index].exactStopDelay );
+   while( lookAheadDist > moveBuffer[index].length && !moveBuffer[index].exactStopDelay > 0 && thisBlockCount );
    {
       lookAheadDist -= moveBuffer[index].length;
       index = nextBlockIndex(index);

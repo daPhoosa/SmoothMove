@@ -37,7 +37,7 @@
          void addExtrude( uint32_t positionSteps );
 
          void startMoving( float _x, float _y, float _z );
-         void stopMoving();
+         void abortMotion();
          void pause();
          void resume();
 
