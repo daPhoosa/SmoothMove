@@ -459,14 +459,13 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
       return;
    }
 
+   getPos( x, y, z, currentBlockIndex, blockPosition); // position of the primary (trailing) smoothing point
+
+   //return;
+   
    int index = currentBlockIndex;
-
-   getPos( x, y, z, index, blockPosition); // position of the primary (trailing) smoothing point
-
-   return;
-
    float x2, y2, z2;
-   float lookAheadDist;
+   float lookAheadPos;  // the position in the current block that the look ahead points to
 
    if( exactStopActive )
    {
@@ -474,30 +473,33 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
       if( timeToEnd < exactStopSmoothingDelay )  // allow early release of look ahead for smoothing
       {
          float t = float( exactStopSmoothingDelay - timeToEnd ) * 0.000001f;
-         lookAheadDist = 0.5f * maxAccel * t * t;
+         lookAheadPos = 0.5f * maxAccel * t * t;
       }
       else
       {
-         lookAheadDist = 0.0f;
+         lookAheadPos = 0.0f;
       }
    }
    else
    {
-      lookAheadDist = 2.0f * cornerRoundDist + blockPosition;  // normal look ahead
+      lookAheadPos = 2.0f * cornerRoundDist + blockPosition;  // normal look ahead
    }
 
    int thisBlockCount = blockCount;
 
-   while( lookAheadDist > moveBuffer[index].length && !moveBuffer[index].exactStopDelay > 0 && thisBlockCount );
+   while( lookAheadPos > moveBuffer[index].length && moveBuffer[index].exactStopDelay == 0 && thisBlockCount > 1 )
    {
-      lookAheadDist -= moveBuffer[index].length;
+      lookAheadPos -= moveBuffer[index].length;
       index = nextBlockIndex(index);
       thisBlockCount--;
+      //Serial.print("*");
    }
 
-   lookAheadDist = min(lookAheadDist, moveBuffer[index].length); // don't look past the end of the next/last segment
+   lookAheadPos = min(lookAheadPos, moveBuffer[index].length); // don't look past the end of the next/last segment
 
-   getPos( x2, y2, z2, index, lookAheadDist); // position of look ahead (leading) smoothing point
+   //Serial.print(lookAheadPos);Serial.print("\t");
+
+   getPos( x2, y2, z2, index, lookAheadPos); // position of look ahead (leading) smoothing point
 
    x = ( x + x2 ) * 0.5f; // average the two smoothing points
    y = ( y + y2 ) * 0.5f;
