@@ -100,6 +100,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
 
    totalDistance = 0.0f;
    
+   startExactStop(currentBlockIndex);
    motionPaused  = false;
    motionStopped = false; 
    segmentIndex = 0;
@@ -132,18 +133,17 @@ void SmoothMove::resume() //
 
 void SmoothMove::advancePostion() // this moves forward along the acc/dec trajectory
 {
-   uint32_t timeNow;
+   uint32_t timeNow = micros();
    
    if(blockCount == 0 || motionStopped || checkExactStop())
    {
       // no blocks ready to be executed, or on exact stop 
       
       velocityNow = 0.0f;
-      segmentStartTime = timeNow = micros();
+      segmentStartTime = timeNow;
    }
    else
    {
-      timeNow = micros();
       uint32_t deltaTime = timeNow - segmentStartTime;
       
       //  check if the next segment has been entered  -- while loop is used to cross multiple zero length segments
@@ -215,14 +215,14 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
    // debug output
    if(blockCount > 0) //
    {
-      //Serial.print(float(timeNow - startOffset) / 1000000.0f, 3); Serial.print("\t");
+      Serial.print(float(timeNow - startOffset) / 1000000.0f, 3); Serial.print("\t");
 
       //Serial.print(blockPosition, 3); Serial.print("\t");
-      //Serial.print(totalDistance + blockPosition, 3); Serial.print("\t");
+      Serial.print(totalDistance + blockPosition, 3); Serial.print("\t");
 
-      //Serial.print(velocityNow, 1);
+      Serial.print(velocityNow, 1);
 
-      //Serial.println("");
+      Serial.println("");
    }
 
 }
@@ -232,9 +232,14 @@ void SmoothMove::startExactStop(int index)
 {
    if(moveBuffer[index].exactStopDelay)
    {
-      exactStopEndTime = micros() + moveBuffer[index].exactStopDelay;
+      exactStopStartTime = micros();
       exactStopDelay = moveBuffer[index].exactStopDelay;
       exactStopActive  = true;
+   }
+   else
+   {
+      exactStopDelay  = 0;
+      exactStopActive = false;
    }
 }
 
@@ -243,7 +248,7 @@ bool SmoothMove::checkExactStop()
 {
    if(exactStopActive)
    {
-      if(exactStopEndTime - micros() < exactStopDelay)
+      if(micros() - exactStopStartTime  < exactStopDelay)
       {
          return true;
       }
@@ -300,7 +305,7 @@ void SmoothMove::constAccelTrajectory()
    xVel[exit]    = 0.0f;   // newest block always ends at zero 
    xVel_Sq[exit] = 0.0f;
 
-   Serial.println("");
+   //Serial.println("");
    
    for(int i = blockCount - 1; i > 0 ; i--)
    {
@@ -424,8 +429,8 @@ void SmoothMove::constAccelTrajectory()
          }         
       }
       
-      Serial.print("=F=> ");
-      displayBlock(exit);
+      //Serial.print("=F=> ");
+      //displayBlock(exit);
       
       // decrement pointers
       exit--;
@@ -458,7 +463,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
 
    if( exactStopActive )
    {
-      uint32_t timeToEnd = exactStopEndTime - micros();
+      uint32_t timeToEnd = exactStopStartTime + exactStopDelay - micros();
       if( timeToEnd < exactStopSmoothingDelay )  // allow early release of look ahead for smoothing
       {
          float t = float( exactStopSmoothingDelay - timeToEnd ) * 0.000001f;

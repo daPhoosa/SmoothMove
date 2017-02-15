@@ -136,7 +136,7 @@
          float maxAccel, accelInverse, accelInverseHalf, accelDouble;
          float maxVel;
          
-         uint32_t exactStopEndTime, exactStopDelay, exactStopSmoothingDelay;
+         uint32_t exactStopStartTime, exactStopDelay, exactStopSmoothingDelay;
          bool exactStopActive;         
          
          bool motionStopped, motionPaused;

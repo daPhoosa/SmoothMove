@@ -181,11 +181,11 @@ void SmoothMove::addDelay(int delayMS)
 {
    if(delayMS > 0)
    {
-      moveBuffer[newBlockIndex].exactStopDelay = min( delayMS, (exactStopSmoothingDelay + 500) / 1000 );
+      moveBuffer[newBlockIndex].exactStopDelay = max( delayMS * 1000UL, exactStopSmoothingDelay );
    }
    else
    {
-      moveBuffer[newBlockIndex].exactStopDelay = (exactStopSmoothingDelay + 500) / 1000;
+      moveBuffer[newBlockIndex].exactStopDelay = 0;
    }   
 }
 
@@ -214,6 +214,7 @@ void SmoothMove::removeOldBlock()
       moveBuffer[currentBlockIndex].targetVel = 0.0f;
       startExactStop(currentBlockIndex);
       
+      //Serial.println(currentBlockIndex);
       currentBlockIndex = nextBlockIndex(currentBlockIndex);
       blockCount--;
    }
