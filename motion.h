@@ -460,32 +460,40 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
    }
 
    // symetric smoothing
-   float smoothingRadius = min(cornerRoundDist, velocityNow * velocityNow * accelInverseHalf);
+   float smoothingRadius = min(cornerRoundDist * 0.5f , velocityNow * velocityNow * accelInverseHalf);
 
-   if(smoothingRadius < 0.010f)
-   {
-      getPos( x, y, z, currentBlockIndex, blockPosition); // return position without smoothing if velocity is very low
-      return;
-   }
+   getPos( x, y, z, currentBlockIndex, blockPosition); // get current position
+
+   if(smoothingRadius < 0.010f) return; // return position without smoothing if velocity is very low
 
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
+
+   bool startInBlock = false;
+   bool endInBlock = false;
+
+   if( smoothingPosStart >= 0.0f ) startInBlock = true;
+   if( smoothingPosEnd <= moveBuffer[currentBlockIndex].length || blockCount < 2 ) endInBlock = true;
+
+   if( startInBlock && endInBlock) return; // do not smooth if NOT near junction (both points lie in the current block)
+
+   float x1, y1, z1;
    float x2, y2, z2;
 
    // get trailing smoothing position
-   if(smoothingPosStart >= 0.0f)
+   if(startInBlock)
    {
-      getPos( x, y, z, currentBlockIndex, smoothingPosStart); // smoothing start position
+      getPos( x1, y1, z1, currentBlockIndex, smoothingPosStart); // smoothing start position
    }
    else // start is in a previous block (velocity is high enough that there must be a previous block)
    {
       int smoothingIndexStart = previousBlockIndex(currentBlockIndex);
       float position = max(0.0f, moveBuffer[smoothingIndexStart].length + smoothingPosStart);
-      getPos( x, y, z, smoothingIndexStart, position); // smoothing start position
+      getPos( x1, y1, z1, smoothingIndexStart, position); // smoothing start position
    }
 
    // get leading smoothing position
-   if(smoothingPosEnd <= moveBuffer[currentBlockIndex].length || blockCount < 2)
+   if(endInBlock)
    {
       getPos( x2, y2, z2, currentBlockIndex, smoothingPosEnd); // smoothing end position is in this block
    }
@@ -496,9 +504,9 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
       getPos( x2, y2, z2, smoothingIndexEnd, position); // smoothing end position is in the next block
    }
 
-   x = ( x + x2 ) * 0.5f; // average the two smoothing points
-   y = ( y + y2 ) * 0.5f;
-   z = ( z + z2 ) * 0.5f;
+   x = ( x + x1 + x2 ) * 0.333333f; // average the three smoothing points
+   y = ( y + y1 + y2 ) * 0.333333f;
+   z = ( z + z1 + z2 ) * 0.333333f;
 
 }
 
