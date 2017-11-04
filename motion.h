@@ -459,6 +459,49 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
       return;
    }
 
+   // symetric smoothing
+   float smoothingRadius = min(cornerRoundDist, velocityNow * velocityNow * accelInverseHalf);
+
+   if(smoothingRadius < 0.010f)
+   {
+      getPos( x, y, z, currentBlockIndex, blockPosition); // return position without smoothing if velocity is very low
+      return;
+   }
+
+   float smoothingPosStart = blockPosition - smoothingRadius;
+   float smoothingPosEnd   = blockPosition + smoothingRadius;
+   float x2, y2, z2;
+
+   if(smoothingPosStart >= 0.0f)
+   {
+      getPos( x, y, z, currentBlockIndex, smoothingPosStart); // smoothing start position
+   }
+   else // start is in a previous block (velocity is high enough that there must be a previous block)
+   {
+      int smoothingIndexStart = previousBlockIndex(currentBlockIndex);
+      float position = max(0.0f, moveBuffer[smoothingIndexStart].length + smoothingPosStart);
+      getPos( x, y, z, smoothingIndexStart, position); // smoothing start position
+   }
+
+   if(smoothingPosEnd <= moveBuffer[currentBlockIndex].length || blockCount < 2)
+   {
+      getPos( x2, y2, z2, currentBlockIndex, smoothingPosEnd); // smoothing end position is in this block
+   }
+   else // end position projects into the next block 
+   {
+      int smoothingIndexEnd = nextBlockIndex(currentBlockIndex);
+      float position = min( moveBuffer[smoothingIndexEnd].length , smoothingPosEnd - moveBuffer[currentBlockIndex].length ); // don't go beyond the end of the next block
+      getPos( x2, y2, z2, smoothingIndexEnd, position); // smoothing end position is in the next block
+   }
+
+   x = ( x + x2 ) * 0.5f; // average the two smoothing points
+   y = ( y + y2 ) * 0.5f;
+   z = ( z + z2 ) * 0.5f;
+
+
+
+   /*
+   // forward smoothing
    getPos( x, y, z, currentBlockIndex, blockPosition); // position of the primary (trailing) smoothing point
 
    //return;
@@ -504,6 +547,8 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
    x = ( x + x2 ) * 0.5f; // average the two smoothing points
    y = ( y + y2 ) * 0.5f;
    z = ( z + z2 ) * 0.5f;
+   */
+
 }
 
 

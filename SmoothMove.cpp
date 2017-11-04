@@ -39,7 +39,7 @@ SmoothMove::SmoothMove( float _accel, float _velMax )
    cornerRoundDist = 0.1f;
    cornerRoundDistSq = cornerRoundDist * cornerRoundDist;
 
-   exactStopSmoothingDelay = uint32_t( sqrt( 4.0f * cornerRoundDist / maxAccel ) * 1000000.0f );  // time [us]
+   //exactStopSmoothingDelay = uint32_t( sqrt( 4.0f * cornerRoundDist / maxAccel ) * 1000000.0f );  // time [us]
 
    motionFeedOverride  = 1.0f;
    extrudeRateOverride = 1.0f;
