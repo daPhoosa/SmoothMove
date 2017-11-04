@@ -500,57 +500,6 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
    y = ( y + y2 ) * 0.5f;
    z = ( z + z2 ) * 0.5f;
 
-
-
-   /*
-   // forward smoothing
-   getPos( x, y, z, currentBlockIndex, blockPosition); // position of the primary (trailing) smoothing point
-
-   //return;
-   
-   int index = currentBlockIndex;
-   float x2, y2, z2;
-   float lookAheadPos;  // the position in the current block that the look ahead points to
-
-   if( exactStopActive )
-   {
-      uint32_t timeToEnd = exactStopStartTime + exactStopDelay - micros();
-      if( timeToEnd < exactStopSmoothingDelay )  // allow early release of look ahead for smoothing
-      {
-         float t = float( exactStopSmoothingDelay - timeToEnd ) * 0.000001f;
-         lookAheadPos = 0.5f * maxAccel * t * t;
-      }
-      else
-      {
-         lookAheadPos = 0.0f;
-      }
-   }
-   else
-   {
-      lookAheadPos = 2.0f * cornerRoundDist + blockPosition;  // normal look ahead
-   }
-
-   int thisBlockCount = blockCount;
-
-   while( lookAheadPos > moveBuffer[index].length && moveBuffer[index].exactStopDelay == 0 && thisBlockCount > 1 )
-   {
-      lookAheadPos -= moveBuffer[index].length;
-      index = nextBlockIndex(index);
-      thisBlockCount--;
-      //Serial.print("*");
-   }
-
-   lookAheadPos = min(lookAheadPos, moveBuffer[index].length); // don't look past the end of the next/last segment
-
-   //Serial.print(lookAheadPos);Serial.print("\t");
-
-   getPos( x2, y2, z2, index, lookAheadPos); // position of look ahead (leading) smoothing point
-
-   x = ( x + x2 ) * 0.5f; // average the two smoothing points
-   y = ( y + y2 ) * 0.5f;
-   z = ( z + z2 ) * 0.5f;
-   */
-
 }
 
 
