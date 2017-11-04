@@ -356,7 +356,7 @@ void SmoothMove::constAccelTrajectory()
       if(start == bufferCount) start = 0;  // wrap buffer pointer
    }
 
-   // Reminder: the current block should not be adjusted
+   // Reminder: the current (oldest) block should not be adjusted
 
    for(int i = blockCount; i > 0 ; i--)
    {
@@ -472,6 +472,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
    float smoothingPosEnd   = blockPosition + smoothingRadius;
    float x2, y2, z2;
 
+   // get trailing smoothing position
    if(smoothingPosStart >= 0.0f)
    {
       getPos( x, y, z, currentBlockIndex, smoothingPosStart); // smoothing start position
@@ -483,6 +484,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
       getPos( x, y, z, smoothingIndexStart, position); // smoothing start position
    }
 
+   // get leading smoothing position
    if(smoothingPosEnd <= moveBuffer[currentBlockIndex].length || blockCount < 2)
    {
       getPos( x2, y2, z2, currentBlockIndex, smoothingPosEnd); // smoothing end position is in this block
