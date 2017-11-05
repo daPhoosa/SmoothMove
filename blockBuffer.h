@@ -152,7 +152,6 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    constAccelTrajectory();
 
    lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
-   moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
 
 }
 
