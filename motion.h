@@ -448,8 +448,20 @@ void SmoothMove::constAccelTrajectory()
 }
 
 
-void SmoothMove::getTargetLocation(float & x, float & y, float & z)
+void SmoothMove::getTargetLocation(float & x, float & y, float & z) 
 {
+   /* 
+      TIME TESTS
+                     Teensy 3.2     Teensy 3.5
+      Min               7us            2us         (middle of a line segment when no smoothing is happening)
+
+      Avg (linear)      13us           2us         (only linear moves, geometry dependent)
+      Max (linear)      34us           6us         (time during line to line smoothing)
+
+      Avg (mixed)       30us           15us        (mixed linear and arc moves, geometry dependent)
+      Max (Arc)         300us          200us       (time during arc to arc transitions)
+
+   */
 
    if(blockCount == 0) // if no blocks are queued up, return current end point
    {

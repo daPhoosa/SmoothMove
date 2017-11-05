@@ -180,7 +180,7 @@ void SmoothMove::addDelay(int delayMS)
 {
    if(delayMS > 0)
    {
-      moveBuffer[newBlockIndex].exactStopDelay = max( delayMS * 1000UL, exactStopSmoothingDelay );
+      moveBuffer[newBlockIndex].exactStopDelay = delayMS * 1000UL;
    }
    else
    {
