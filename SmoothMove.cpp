@@ -23,7 +23,7 @@
 #include "blockBuffer.h"
 
 
-SmoothMove::SmoothMove( float _accel, float _velMax )
+SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
 {
    currentBlockIndex = 0;
    newBlockIndex = 0;
@@ -36,7 +36,7 @@ SmoothMove::SmoothMove( float _accel, float _velMax )
 
    maxVel       = abs( _velMax );
 
-   cornerRoundDist = 0.1f;
+   cornerRoundDist = max( _cornerRounding, 0.001f );
    cornerRoundDistSq = cornerRoundDist * cornerRoundDist;
 
    motionFeedOverride  = 1.0f;

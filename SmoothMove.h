@@ -26,7 +26,7 @@
    class SmoothMove
    {
       public:
-         SmoothMove(float _accel, float _velMax);
+         SmoothMove(float _accel, float _velMax, float _cornerRounding);
          ~SmoothMove();
 
          bool bufferVacancy();
