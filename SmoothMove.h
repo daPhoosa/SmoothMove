@@ -44,8 +44,6 @@
          float setMotionRateOverride(  float scale );
          float setExtrudeRateOverride( float scale );
 
-         void advancePostion();
-
          void getTargetLocation( float & x, float & y, float & z );
          uint32_t getExtrudeLocationSteps();
 
@@ -148,6 +146,7 @@
 
 
          // *** PRIVATE FUNCTIONS ***
+         void advancePostion();
          void constAccelTrajectory();
 
          void startExactStop( int index );

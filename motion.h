@@ -267,7 +267,7 @@ bool SmoothMove::checkExactStop()
 }
 
 
-void SmoothMove::setMaxStartVel(const int & index)
+void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 {
    int prevBlock = previousBlockIndex(index);
 
@@ -448,7 +448,7 @@ void SmoothMove::constAccelTrajectory()
 }
 
 
-void SmoothMove::getTargetLocation(float & x, float & y, float & z) 
+void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to get current cartesian position
 {
    /* 
       TIME TESTS
@@ -462,6 +462,8 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z)
       Max (Arc)         300us          200us       (time during arc to arc transitions)
 
    */
+
+   advancePostion();
 
    if(blockCount == 0) // if no blocks are queued up, return current end point
    {
