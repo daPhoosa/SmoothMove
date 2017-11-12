@@ -95,7 +95,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 11;
+         const static int bufferCount = 21;
 
          struct block_t
          {
@@ -108,12 +108,12 @@
             float targetVel, targetVel_Sq, peakVel, maxStartVel;
 
             float accelEndPoint, velEndPoint, decelLength; // length of each segement
-            uint32_t accelTime,  velTime,     decelTime;   // time to complete each segement
+            uint32_t accelTime,  velTime,     decelTime,  dwell;   // time to complete each segement
 
             uint32_t extrudePosition, extrudePositionProgram;
             float extrudeScaleFactor;
 
-            int exactStopDelay;
+            //int exactStopDelay;
 
             moveType_t moveType;
          } moveBuffer[bufferCount];

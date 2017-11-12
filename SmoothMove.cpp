@@ -27,7 +27,7 @@ SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
 {
    currentBlockIndex = 0;
    newBlockIndex = 0;
-   blockCount    = 1; // dummy first block
+   blockCount    = 0; // dummy first block
 
    maxAccel     = _accel;
    accelInverse = 1.0f / _accel;

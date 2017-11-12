@@ -59,7 +59,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       moveBuffer[B_0].length    = 0.0f;
       moveBuffer[B_0].targetVel = 0.0f;
 
-      moveBuffer[B_0].exactStopDelay = 20000; // 20ms delay on start
+      moveBuffer[B_0].dwell = 200000; // 200ms delay on start
 
 
       moveBuffer[B_1].X_start  = _x; // set start to current position
@@ -134,9 +134,9 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
 {
    uint32_t timeNow;
 
-   if( blockCount == 0 || motionStopped || checkExactStop() )
+   if( blockCount == 0 || motionStopped )
    {
-      // no blocks ready to be executed, or on exact stop
+      // no blocks ready to be executed
       //Serial.print(blockCount);Serial.println("");
       velocityNow = 0.0f;
       segmentStartTime = micros();
@@ -147,26 +147,33 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
       uint32_t deltaTime = timeNow - segmentStartTime;
 
       //  check if the next segment has been entered  -- while loop is used to cross multiple zero length segments
-      while( deltaTime > segmentTime && blockCount > 0 && !exactStopActive )
+      while( deltaTime > segmentTime )
       {
          //Serial.println(blockCount);
          //Serial.println(currentBlockIndex);
          //Serial.println(segmentTime);
          //Serial.println(deltaTime);
 
-         segmentStartTime += segmentTime; // advance start time by previous segment time
          timeNow = micros();
+         segmentStartTime += segmentTime; // advance start time by previous segment time
          deltaTime = timeNow - segmentStartTime;
 
          switch( segmentIndex )
          {
-            case 2 : // switch to ACCELERATION
-               totalDistance += moveBuffer[currentBlockIndex].length;
-               removeOldBlock(); // previous block complete, index to next block
+            case 3 : // switch to ACCELERATION
+               if( blockCount > 1) // only move to the next block if there is another one
+               {
+                  totalDistance += moveBuffer[currentBlockIndex].length;
+                  removeOldBlock(); // previous block complete, index to next block
 
-               segmentTime    = moveBuffer[currentBlockIndex].accelTime;
-               lookAheadTime -= moveBuffer[currentBlockIndex].accelTime; // segment time is removed as soon as the segment is started
-               segmentIndex = 0;
+                  segmentTime    = moveBuffer[currentBlockIndex].accelTime;
+                  lookAheadTime -= moveBuffer[currentBlockIndex].accelTime; // segment time is removed as soon as the segment is started
+                  segmentIndex = 0;
+               }
+               else
+               {
+                  segmentTime = 10000UL; // force 10ms of dwell before checking again
+               }
                break;
 
             case 0 : // switch to CONST VELOCITY
@@ -178,42 +185,47 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
             case 1 : // switch to DECELERATION
                segmentTime    = moveBuffer[currentBlockIndex].decelTime;
                lookAheadTime -= moveBuffer[currentBlockIndex].decelTime;
-               segmentIndex = 2;
+               segmentIndex = 2; // move to next block
+               break;
+
+            case 2 : // switch to DWELL
+               segmentTime  = moveBuffer[currentBlockIndex].dwell;
+               segmentIndex = 3;
                break;
          }
       }
 
-      if(exactStopActive)
+
+      float dt, dt_Sq;
+      int start;
+
+      switch(segmentIndex)  // compute current position in the block
       {
-         blockPosition = 0.0f; // during exact stop, position is forced to the beginning of the next block
-         velocityNow   = 0.0f;
-      }
-      else
-      {
-         float dt = float(deltaTime) * 0.000001f;
-         float dt_Sq;
-         int start;
+         case 0 : // state: Accel
+            dt = float(deltaTime) * 0.000001f;
+            dt_Sq = dt * dt;
+            start = previousBlockIndex(currentBlockIndex);
+            blockPosition = 0.5f * maxAccel * dt_Sq + xVel[start] * dt;
+            velocityNow = maxAccel * dt + xVel[start];
+            break;
 
-         switch(segmentIndex)  // compute current position in the block
-         {
-            case 0 : // state: Accel
-               dt_Sq = dt * dt;
-               start = previousBlockIndex(currentBlockIndex);
-               blockPosition = 0.5f * maxAccel * dt_Sq + xVel[start] * dt;
-               velocityNow = maxAccel * dt + xVel[start];
-               break;
+         case 1 : // state: Const Vel
+            dt = float(deltaTime) * 0.000001f;
+            blockPosition = moveBuffer[currentBlockIndex].targetVel * dt + moveBuffer[currentBlockIndex].accelEndPoint;
+            velocityNow = moveBuffer[currentBlockIndex].targetVel;
+            break;
 
-            case 1 : // state: Const Vel
-               blockPosition = moveBuffer[currentBlockIndex].targetVel * dt + moveBuffer[currentBlockIndex].accelEndPoint;
-               velocityNow = moveBuffer[currentBlockIndex].targetVel;
-               break;
+         case 2 : // state: Decel
+            dt = float(deltaTime) * 0.000001f;
+            dt_Sq = dt * dt;
+            blockPosition = -0.5f * maxAccel * dt_Sq + moveBuffer[currentBlockIndex].peakVel * dt + moveBuffer[currentBlockIndex].velEndPoint;
+            velocityNow = -maxAccel * dt + moveBuffer[currentBlockIndex].peakVel;
+            break;
 
-            case 2 : // state: Decel
-               dt_Sq = dt * dt;
-               blockPosition = -0.5f * maxAccel * dt_Sq + moveBuffer[currentBlockIndex].peakVel * dt + moveBuffer[currentBlockIndex].velEndPoint;
-               velocityNow = -maxAccel * dt + moveBuffer[currentBlockIndex].peakVel;
-               break;
-         }
+         case 3 : // state: Dwell
+            blockPosition = moveBuffer[currentBlockIndex].length; // stop at end of current block
+            velocityNow = 0.0f;
+            break;
       }
    }
 
@@ -233,45 +245,11 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
 }
 
 
-void SmoothMove::startExactStop(int index)
-{
-   if( moveBuffer[index].exactStopDelay )
-   {
-      exactStopStartTime = micros();
-      exactStopDelay = moveBuffer[index].exactStopDelay;
-      exactStopActive  = true;
-   }
-   else
-   {
-      exactStopDelay  = 0;
-      exactStopActive = false;
-   }
-}
-
-
-bool SmoothMove::checkExactStop()
-{
-   if(exactStopActive)
-   {
-      if(micros() - exactStopStartTime  < exactStopDelay)
-      {
-         return true;
-      }
-      else
-      {
-         exactStopActive = false; // past delay time, turn off flag
-         segmentStartTime = micros(); // set the start time of the next (current) segment to now
-      }
-   }
-   return false;
-}
-
-
 void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 {
    int prevBlock = previousBlockIndex(index);
 
-   if(blockCount > 1 && !moveBuffer[prevBlock].exactStopDelay)
+   if(blockCount > 1 && !moveBuffer[prevBlock].dwell)
    {
       float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
 
@@ -450,7 +428,7 @@ void SmoothMove::constAccelTrajectory()
 
 void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to get current cartesian position
 {
-   /* 
+   /*
       TIME TESTS
                      Teensy 3.2     Teensy 3.5
       Min               7us            2us         (middle of a line segment when no smoothing is happening)
@@ -511,7 +489,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    {
       getPos( x2, y2, z2, currentBlockIndex, smoothingPosEnd); // smoothing end position is in this block
    }
-   else // end position projects into the next block 
+   else // end position projects into the next block
    {
       int smoothingIndexEnd = nextBlockIndex(currentBlockIndex);
       float position = min( moveBuffer[smoothingIndexEnd].length , smoothingPosEnd - moveBuffer[currentBlockIndex].length ); // don't go beyond the end of the next block

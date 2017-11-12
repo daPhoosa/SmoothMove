@@ -74,8 +74,6 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
 
    setMaxStartVel(index);  // set cornering/start speed
 
-   moveBuffer[index].exactStopDelay = 0;
-
    constAccelTrajectory();
 
    lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
@@ -168,7 +166,7 @@ int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & 
    Y_end = _y;
    Z_end = _z;
 
-   moveBuffer[index].exactStopDelay = 0;  // assume continuous motion
+   moveBuffer[index].dwell = 0;  // assume continuous motion
 
    moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
 
@@ -180,11 +178,11 @@ void SmoothMove::addDelay(int delayMS)
 {
    if(delayMS > 0)
    {
-      moveBuffer[newBlockIndex].exactStopDelay = delayMS * 1000UL;
+      moveBuffer[newBlockIndex].dwell = delayMS * 1000UL;
    }
    else
    {
-      moveBuffer[newBlockIndex].exactStopDelay = 0;
+      moveBuffer[newBlockIndex].dwell = 0;
    }
 }
 
@@ -211,7 +209,6 @@ void SmoothMove::removeOldBlock()
    {
       blockPosition -= moveBuffer[currentBlockIndex].length;
       moveBuffer[currentBlockIndex].targetVel = 0.0f;
-      startExactStop(currentBlockIndex);
 
       //Serial.println(currentBlockIndex);
       currentBlockIndex = nextBlockIndex(currentBlockIndex);
@@ -281,7 +278,7 @@ void SmoothMove::displayBlock( int i )
    //Serial.print(Y_end); Serial.print(" ");
    //Serial.print(Z_end); Serial.print("\t");
 
-   Serial.print(moveBuffer[i].exactStopDelay);
+   Serial.print(moveBuffer[i].dwell);
 
    Serial.println("");
 }
