@@ -113,8 +113,6 @@
             uint32_t extrudePosition, extrudePositionProgram;
             float extrudeScaleFactor;
 
-            //int exactStopDelay;
-
             moveType_t moveType;
          } moveBuffer[bufferCount];
 

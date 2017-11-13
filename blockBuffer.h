@@ -158,6 +158,8 @@ int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & 
 {
    int index = AddNewBlockIndex();
 
+   //Serial.print("*** ADD *** ");Serial.println(index);
+
    moveBuffer[index].X_start = X_end; // set start point to previous blocks end point
    moveBuffer[index].Y_start = Y_end;
    moveBuffer[index].Z_start = Z_end;
@@ -207,12 +209,14 @@ void SmoothMove::removeOldBlock()
 {
    if(blockCount > 0) // don't allow negative block counts
    {
+      //Serial.print("*** REMOVE *** ");Serial.println(currentBlockIndex);
       blockPosition -= moveBuffer[currentBlockIndex].length;
       moveBuffer[currentBlockIndex].targetVel = 0.0f;
 
       //Serial.println(currentBlockIndex);
       currentBlockIndex = nextBlockIndex(currentBlockIndex);
       blockCount--;
+      
    }
    else
    {

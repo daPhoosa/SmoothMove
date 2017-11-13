@@ -96,13 +96,13 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       }
 
       constAccelTrajectory();
+      segmentIndex = 0;
    }
 
    totalDistance = 0.0f;
 
    motionPaused  = false;
    motionStopped = false;
-   segmentIndex = 0;
    segmentTime = 0.0f;
    segmentStartTime = startOffset = micros();
 }
@@ -160,20 +160,13 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
 
          switch( segmentIndex )
          {
-            case 3 : // switch to ACCELERATION
-               if( blockCount > 1) // only move to the next block if there is another one
-               {
-                  totalDistance += moveBuffer[currentBlockIndex].length;
-                  removeOldBlock(); // previous block complete, index to next block
+            case 4 : // switch to ACCELERATION
+               totalDistance += moveBuffer[currentBlockIndex].length;
+               removeOldBlock(); // previous block complete, index to next block
 
-                  segmentTime    = moveBuffer[currentBlockIndex].accelTime;
-                  lookAheadTime -= moveBuffer[currentBlockIndex].accelTime; // segment time is removed as soon as the segment is started
-                  segmentIndex = 0;
-               }
-               else
-               {
-                  segmentTime = 10000UL; // force 10ms of dwell before checking again
-               }
+               segmentTime    = moveBuffer[currentBlockIndex].accelTime;
+               lookAheadTime -= moveBuffer[currentBlockIndex].accelTime; // segment time is removed as soon as the segment is started
+               segmentIndex = 0;
                break;
 
             case 0 : // switch to CONST VELOCITY
@@ -192,6 +185,12 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                segmentTime  = moveBuffer[currentBlockIndex].dwell;
                segmentIndex = 3;
                break;
+
+            case 3 : // wait for next block
+               segmentTime = 10000UL; // force 10ms of dwell before checking again
+               if( blockCount > 1 ) segmentIndex = 4; // only advance to next block if one exists
+               break;
+
          }
       }
 
@@ -223,6 +222,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
             break;
 
          case 3 : // state: Dwell
+         case 4 : // state: Wait for next block
             blockPosition = moveBuffer[currentBlockIndex].length; // stop at end of current block
             velocityNow = 0.0f;
             break;
