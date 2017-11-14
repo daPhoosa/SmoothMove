@@ -46,6 +46,7 @@
 
          void getTargetLocation( float & x, float & y, float & z );
          float getSpeed();
+         bool waitingForNewBlock();
          uint32_t getExtrudeLocationSteps();
 
          int  getBlockCount();

@@ -288,4 +288,14 @@ void SmoothMove::displayBlock( int i )
 }
 
 
+bool SmoothMove::waitingForNewBlock()
+{
+   if( blockCount < 2 && segmentIndex > 2 )
+   {
+      return true;
+   }
+   return false;
+}
+
+
 
