@@ -45,6 +45,7 @@
          float setExtrudeRateOverride( float scale );
 
          void getTargetLocation( float & x, float & y, float & z );
+         float getSpeed();
          uint32_t getExtrudeLocationSteps();
 
          int  getBlockCount();

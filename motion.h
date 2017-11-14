@@ -554,3 +554,8 @@ float SmoothMove::setExtrudeRateOverride( float scale )
    return extrudeRateOverride;
 }
 
+float SmoothMove::getSpeed()
+{
+   return velocityNow;
+}
+
