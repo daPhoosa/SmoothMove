@@ -60,7 +60,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       moveBuffer[B_0].length    = 0.0f;
       moveBuffer[B_0].targetVel = 0.0f;
 
-      moveBuffer[B_0].dwell = 0; // 200ms delay on start
+      moveBuffer[B_0].dwell = 1; // 200ms delay on start
 
 
       moveBuffer[B_1].X_start  = _x; // set start to current position
