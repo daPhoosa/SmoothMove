@@ -97,7 +97,6 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       }
 
       constAccelTrajectory();
-      segmentIndex = 0;
    }
 
    totalDistance = 0.0f;
