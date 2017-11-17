@@ -104,7 +104,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
 
    motionPaused  = false;
    motionStopped = false;
-   segmentTime = 0.0f;
+   segmentTime = 1000;
    segmentStartTime = startOffset = micros();
 }
 
