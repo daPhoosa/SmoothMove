@@ -288,7 +288,7 @@ void SmoothMove::displayBlock( int i )
 }
 
 
-bool SmoothMove::waitingForNewBlock()
+bool SmoothMove::blockQueueComplete()
 {
    if( blockCount < 2 && segmentIndex > 2 ) // must be on last block and wating for next block
    {
