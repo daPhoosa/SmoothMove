@@ -36,6 +36,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       // Update first block start position
       float dx, dy, dz;
 
+      //currentBlockIndex = previousBlockIndex(currentBlockIndex);  // back up one index
 
       int B_0 = currentBlockIndex;       // dummy block
       int B_1 = nextBlockIndex(B_0);     // first real block
@@ -59,7 +60,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       moveBuffer[B_0].length    = 0.0f;
       moveBuffer[B_0].targetVel = 0.0f;
 
-      moveBuffer[B_0].dwell = 200000; // 200ms delay on start
+      moveBuffer[B_0].dwell = 0; // 200ms delay on start
 
 
       moveBuffer[B_1].X_start  = _x; // set start to current position
@@ -187,10 +188,16 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                break;
 
             case 3 : // wait for next block
-               segmentTime = 10000UL; // force 10ms of dwell before checking again
-               if( blockCount > 1 ) segmentIndex = 4; // only advance to next block if one exists
+               if( blockCount > 1 )
+               {
+                  segmentIndex = 4; // only advance to next block if one exists
+                  segmentTime  = 0;
+               }
+               else
+               {
+                  segmentTime = 2000UL; // force 2ms of dwell before checking again
+               }
                break;
-
          }
       }
 
