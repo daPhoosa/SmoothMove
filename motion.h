@@ -36,8 +36,6 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       // Update first block start position
       float dx, dy, dz;
 
-      //currentBlockIndex = previousBlockIndex(currentBlockIndex);  // back up one index
-
       int B_0 = currentBlockIndex;       // dummy block
       int B_1 = nextBlockIndex(B_0);     // first real block
       int B_2 = nextBlockIndex(B_1);     // second real block

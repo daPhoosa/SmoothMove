@@ -290,7 +290,7 @@ void SmoothMove::displayBlock( int i )
 
 bool SmoothMove::waitingForNewBlock()
 {
-   if( blockCount < 2 && segmentIndex > 2 )
+   if( blockCount < 2 && segmentIndex > 3 )
    {
       return true;
    }
