@@ -120,7 +120,7 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
       arcAngle = endAngle - moveBuffer[index].startAngle;
    }
 
-   if(arcAngle < 0.0001f) //matching start and stop locations indicates full circle
+   if(arcAngle < 0.0001f)     // must be positive and matching start and stop locations indicates full circle
    {
       arcAngle += 6.2831853f;
    }
@@ -130,10 +130,10 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    float endRadiusSq = dXend * dXend + dYend * dYend;
 
    // check start and end point consistency
-   if( abs( startRadiusSq - endRadiusSq ) > 0.000645f)
+   if( abs( startRadiusSq - endRadiusSq ) > 0.000645f )
    {
       Serial.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
-      while(true); // probably a better way to do this
+      while(true); // hang - probably a better way to do this
    }
 
    moveBuffer[index].X_vector = centerX;
