@@ -129,7 +129,7 @@
 
          float X_end, Y_end, Z_end;
 
-         float cornerRoundDist, cornerRoundDistSq;
+         float cornerRoundDist, cornerRoundDistSq, cornerRoundDistHalf;
 
          float maxAccel, accelInverse, accelInverseHalf, accelDouble;
          float maxVel;

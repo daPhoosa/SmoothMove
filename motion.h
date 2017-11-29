@@ -456,22 +456,22 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    }
 
    // symetric smoothing
-   float smoothingRadius = min(cornerRoundDist * 0.5f , velocityNow * velocityNow * accelInverseHalf);
+   float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * accelInverseHalf );
 
-   getPos( x, y, z, currentBlockIndex, blockPosition); // get current position
+   getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
 
-   if(smoothingRadius < 0.010f) return; // return position without smoothing if velocity is very low
+   if(smoothingRadius < 0.001f) return; // return current position without smoothing if velocity is very low
 
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
 
    bool startInBlock = false;
-   bool endInBlock = false;
+   bool endInBlock   = false;
 
    if( smoothingPosStart >= 0.0f ) startInBlock = true;
    if( smoothingPosEnd <= moveBuffer[currentBlockIndex].length || blockCount < 2 ) endInBlock = true;
 
-   if( startInBlock && endInBlock) return; // do not smooth if NOT near junction (both points lie in the current block)
+   if( startInBlock && endInBlock) return; // do not smooth if far from junction (both points lie in the current block)
 
    float x1, y1, z1;
    float x2, y2, z2;
@@ -503,7 +503,8 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    x = ( x + x1 + x2 ) * 0.333333f; // average the three smoothing points
    y = ( y + y1 + y2 ) * 0.333333f;
    z = ( z + z1 + z2 ) * 0.333333f;
-
+   // three point smoothing creates a pseudo arc
+   // two point smoothing creates a straight "chamfer"
 }
 
 
