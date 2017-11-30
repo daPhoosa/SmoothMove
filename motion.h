@@ -29,7 +29,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       Z_end = _z;
 
       addLinear_Block(0, _x, _y, _z, 1.0f ); // add dummy block
-      addDelay(1);
+      addDelay(10);
    }
    else
    {
@@ -39,8 +39,6 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       int B_0 = currentBlockIndex;       // dummy block
       int B_1 = nextBlockIndex(B_0);     // first real block
       int B_2 = nextBlockIndex(B_1);     // second real block
-
-      //Serial.print(B_0);Serial.print(" ");Serial.print(B_1);Serial.print(" ");Serial.println(B_2);
 
       moveBuffer[B_0].X_start  = _x; // set start to current position
       moveBuffer[B_0].Y_start  = _y;
@@ -135,7 +133,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
    if( blockCount == 0 || motionStopped )
    {
       // no blocks ready to be executed
-      //Serial.print(blockCount);Serial.println("");
       velocityNow = 0.0f;
       segmentStartTime = micros();
    }
@@ -147,10 +144,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
       //  check if the next segment has been entered  -- while loop is used to cross multiple zero length segments
       while( deltaTime > segmentTime )
       {
-         //Serial.println(blockCount);
-         //Serial.println(currentBlockIndex);
-         //Serial.println(segmentTime);
-         //Serial.println(deltaTime);
 
          timeNow = micros();
          segmentStartTime += segmentTime; // advance start time by previous segment time
@@ -198,7 +191,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
          }
       }
 
-
       float dt, dt_Sq;
       int start;
 
@@ -232,20 +224,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
             break;
       }
    }
-
-   // debug output
-   if(blockCount > 0) //
-   {
-      //Serial.print(float(timeNow - startOffset) / 1000000.0f, 3); Serial.print("\t");
-
-      //Serial.print(blockPosition, 3); Serial.print("\t");
-      //Serial.print(totalDistance + blockPosition, 3); Serial.print("\t");
-
-      //Serial.print(velocityNow, 1);
-
-      //Serial.println("");
-   }
-
 }
 
 
@@ -272,9 +250,6 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
       float vel = sqrt(maxAccel * radius);
 
       moveBuffer[index].maxStartVel = min( vel, min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel ));
-
-      //Serial.println(radius);
-      //Serial.println(moveBuffer[index].maxStartVel);
    }
    else
    {
@@ -292,8 +267,6 @@ void SmoothMove::constAccelTrajectory()
    xVel[exit]    = 0.0f;   // newest block always ends at zero
    xVel_Sq[exit] = 0.0f;
 
-   //Serial.println("");
-
    for(int i = blockCount - 1; i > 0 ; i--)
    {
       // iterate through the active blocks backwards (newest to oldest)
@@ -310,25 +283,13 @@ void SmoothMove::constAccelTrajectory()
          // not enough room to decel from startVel to endVel
          xVel_Sq[start] = xVel_Sq[exit] + accelDouble * moveBuffer[exit].length; // set startVel lower
          xVel[start]    = sqrt(xVel_Sq[start]);
-         //Serial.print("1");
       }
       else if(distToDeltaVel < -moveBuffer[exit].length)
       {
          // not enough room to accel from startVel to endVel
          xVel_Sq[exit] = xVel_Sq[start] + accelDouble * moveBuffer[exit].length; // set exitVel lower
          xVel[exit]    = sqrt(xVel_Sq[exit]);
-         //Serial.print("2");
       }
-      else
-      {
-         //Serial.print("3");
-      }
-
-      // if neither of the above cases are trigered, then the start and end velocities are "in reach" of each other
-
-      //Serial.print(start);Serial.print("\t");Serial.println(exit);
-      //Serial.print("<=B= ");
-      //displayBlock(exit);
 
       // increment pointers
       exit++;
@@ -367,9 +328,6 @@ void SmoothMove::constAccelTrajectory()
 
          moveBuffer[index].decelTime     = 0;
          moveBuffer[index].decelLength   = 0.0f;
-
-         //Serial.print("1");
-
       }
       else
       {
@@ -393,8 +351,6 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].targetVel - xVel[start] ) * accelInverse * 1000000.0f);
             moveBuffer[index].velTime   = uint32_t(( moveBuffer[index].velEndPoint - moveBuffer[index].accelEndPoint) / moveBuffer[index].targetVel * 1000000.0f);
             moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].targetVel - xVel[exit]  ) * accelInverse * 1000000.0f);
-
-            //Serial.print("2");
          }
          else
          {
@@ -411,13 +367,8 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].peakVel - xVel[start]) * accelInverse * 1000000.0f);
             moveBuffer[index].velTime   = 0;
             moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].peakVel - xVel[exit] ) * accelInverse * 1000000.0f);
-
-            //Serial.print("3");
          }
       }
-
-      //Serial.print("=F=> ");
-      //displayBlock(exit);
 
       // decrement pointers
       exit--;
@@ -426,7 +377,6 @@ void SmoothMove::constAccelTrajectory()
       if(exit  < 0) exit  = bufferCount - 1;  // wrap buffer pointer
       if(start < 0) start = bufferCount - 1;  // wrap buffer pointer
    }
-
 }
 
 
