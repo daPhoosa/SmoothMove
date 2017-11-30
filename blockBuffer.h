@@ -23,11 +23,11 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
    if( motionPaused ) return false;  // dont accept new blocks if motion is paused
 
    if( blockCount < 3 ) return true; // try to maintain 3 block look ahead minimum
+   
+   if( blockCount == bufferCount - 1 ) return false; // don't exceed max buffer size
 
    uint32_t lookAheadTimeMin = uint32_t(( velocityNow * accelInverse + 0.050f ) * 1000000.0f ); // time to decel to zero plus 50ms in [us]
-   if( lookAheadTime > lookAheadTimeMin ) return false; // avoid excessive look ahead by time
-
-   if( blockCount < bufferCount - 1 ) return true; // don't exceed max buffer size
+   if( lookAheadTimeMin < lookAheadTime ) return true; // try to insure adequate blocks to prevent velocity throttling
 
    return false;
 }
@@ -83,74 +83,80 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
 
 void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float centerX, float centerY)
 {
-   int index = addBaseBlock( _x, _y, Z_end );
-
-   if(type == 2)
-   {
-      moveBuffer[index].moveType = ArcCW; // Clockwise Arc G2
-   }
-   else
-   {
-      moveBuffer[index].moveType = ArcCCW; // Counter-Clockwise Arc G3
-   }
-
    float dXstart = moveBuffer[index].X_start - centerX;
    float dYstart = moveBuffer[index].Y_start - centerY;
-
-   moveBuffer[index].startAngle = atan2(dYstart, dXstart);
-   if(moveBuffer[index].startAngle < 0.0f) moveBuffer[index].startAngle += 6.2831853f; // force positive
-
    float startRadiusSq = dXstart * dXstart + dYstart * dYstart;
-   moveBuffer[index].radius = sqrt(startRadiusSq);
 
-   float dXend = X_end - centerX;
-   float dYend = Y_end - centerY;
-
-   float endAngle = atan2(dYend, dXend);
-   if(endAngle < 0.0f) endAngle += 6.2831853f; // force positive
-
-   float arcAngle;
-
-   if(moveBuffer[index].moveType == ArcCW)
+   if( startRadiusSq < cornerRoundDistSq ) // replace arc with linear move if radius is very small (it's possible that this should be handled in the gCode engine)
    {
-      arcAngle = moveBuffer[index].startAngle - endAngle;
+      addLinear_Block( 1, _x, _y, Z_end, _feed );
    }
-   else
+   else // add arc move
    {
-      arcAngle = endAngle - moveBuffer[index].startAngle;
+      int index = addBaseBlock( _x, _y, Z_end );
+      
+      if(type == 2)
+      {
+         moveBuffer[index].moveType = ArcCW; // Clockwise Arc G2
+      }
+      else
+      {
+         moveBuffer[index].moveType = ArcCCW; // Counter-Clockwise Arc G3
+      }
+   
+      moveBuffer[index].startAngle = atan2(dYstart, dXstart);
+      if(moveBuffer[index].startAngle < 0.0f) moveBuffer[index].startAngle += 6.2831853f; // force positive
+   
+      moveBuffer[index].radius = sqrt(startRadiusSq);
+   
+      float dXend = X_end - centerX;
+      float dYend = Y_end - centerY;
+   
+      float endAngle = atan2(dYend, dXend);
+      if(endAngle < 0.0f) endAngle += 6.2831853f; // force positive
+   
+      float arcAngle;
+   
+      if(moveBuffer[index].moveType == ArcCW)
+      {
+         arcAngle = moveBuffer[index].startAngle - endAngle;
+      }
+      else
+      {
+         arcAngle = endAngle - moveBuffer[index].startAngle;
+      }
+   
+      if(arcAngle < 0.0001f)     // must be positive and matching start and stop locations indicates full circle
+      {
+         arcAngle += 6.2831853f;
+      }
+   
+      moveBuffer[index].length = arcAngle * moveBuffer[index].radius;
+   
+      float endRadiusSq = dXend * dXend + dYend * dYend;
+   
+      // check start and end point consistency
+      if( abs( startRadiusSq - endRadiusSq ) > 0.000645f )  // both radii should match within .025mm (.001in)
+      {
+         Serial.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
+         while(true); // hang - probably a better way to do this
+      }
+   
+      moveBuffer[index].X_vector = centerX;
+      moveBuffer[index].Y_vector = centerY;
+      moveBuffer[index].Z_vector = 0.0f;
+   
+      _feed = abs( _feed ) * motionFeedOverride;  // apply feed rate override
+      _feed = constrain( _feed, 0.01f, sqrt(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
+      moveBuffer[index].targetVel    = min( _feed, maxVel );
+      moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
+   
+      setMaxStartVel(index);  // set cornering/start speed
+   
+      constAccelTrajectory();
+   
+      lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
    }
-
-   if(arcAngle < 0.0001f)     // must be positive and matching start and stop locations indicates full circle
-   {
-      arcAngle += 6.2831853f;
-   }
-
-   moveBuffer[index].length = arcAngle * moveBuffer[index].radius;
-
-   float endRadiusSq = dXend * dXend + dYend * dYend;
-
-   // check start and end point consistency
-   if( abs( startRadiusSq - endRadiusSq ) > 0.000645f )
-   {
-      Serial.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
-      while(true); // hang - probably a better way to do this
-   }
-
-   moveBuffer[index].X_vector = centerX;
-   moveBuffer[index].Y_vector = centerY;
-   moveBuffer[index].Z_vector = 0.0f;
-
-   _feed = abs( _feed ) * motionFeedOverride;  // apply feed rate override
-   _feed = constrain( _feed, 0.01f, sqrt(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
-   moveBuffer[index].targetVel    = min( _feed, maxVel );
-   moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
-
-   setMaxStartVel(index);  // set cornering/start speed
-
-   constAccelTrajectory();
-
-   lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
-
 }
 
 
@@ -209,18 +215,17 @@ void SmoothMove::removeOldBlock()
 {
    if(blockCount > 0) // don't allow negative block counts
    {
-      //Serial.print("*** REMOVE *** ");Serial.println(currentBlockIndex);
       blockPosition -= moveBuffer[currentBlockIndex].length;
       moveBuffer[currentBlockIndex].targetVel = 0.0f;
 
-      //Serial.println(currentBlockIndex);
       currentBlockIndex = nextBlockIndex(currentBlockIndex);
       blockCount--;
-      
    }
    else
    {
-      currentBlockIndex = newBlockIndex = blockCount = 0; // something screwed up if this is ever executed...
+      // something screwed up if this is ever executed...
+      currentBlockIndex = blockCount = 0; 
+      newBlockIndex = 1;
    }
 }
 
@@ -249,6 +254,16 @@ int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of t
       return currentIndex + 1;
 
    return 0;
+}
+
+
+bool SmoothMove::blockQueueComplete()
+{
+   if( blockCount < 2 && segmentIndex > 2 ) // must be on last block and waiting for next block
+   {
+      return true;
+   }
+   return false;
 }
 
 
@@ -288,14 +303,7 @@ void SmoothMove::displayBlock( int i )
 }
 
 
-bool SmoothMove::blockQueueComplete()
-{
-   if( blockCount < 2 && segmentIndex > 2 ) // must be on last block and wating for next block
-   {
-      return true;
-   }
-   return false;
-}
+
 
 
 
