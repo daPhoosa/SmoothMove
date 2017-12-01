@@ -116,6 +116,8 @@
             float extrudeScaleFactor;
 
             moveType_t moveType;
+
+            bool fastJunction;  // true if the transition from the prev block does not reduce vel
          } moveBuffer[bufferCount];
 
          float xVel[bufferCount];      // velocity at block boundarys

@@ -247,13 +247,25 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
       float radius = sqrt( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
 
-      float vel = sqrt(maxAccel * radius);
+      float junctionVel = sqrt(maxAccel * radius);
 
-      moveBuffer[index].maxStartVel = min( vel, min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel ));
+      minBlockVel = min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel );
+
+      if( junctionVel < minBlockVel )
+      {
+         moveBuffer[index].maxStartVel = junctionVel;
+         moveBuffer[index].fastJunction = false;
+      }
+      else
+      {
+         moveBuffer[index].maxStartVel = minBlockVel;
+         moveBuffer[index].fastJunction = true;
+      }
    }
    else
    {
       moveBuffer[index].maxStartVel = 0.0f;  // first block always starts at zero vel and blocks after an exact stop
+      moveBuffer[index].fastJunction = true; // no point in smoothing if coming from a dead stop
    }
 }
 
@@ -415,8 +427,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
 
-   bool startInBlock = false;
-   bool endInBlock   = false;
+   bool startInBlock, endInBlock;
    int smoothingIndexStart, smoothingIndexEnd;
 
    if( smoothingPosStart >= 0.0f ) // check if start point is in current block
@@ -426,6 +437,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    }
    else
    {
+      startInBlock = false;
       smoothingIndexStart = previousBlockIndex(currentBlockIndex);
    }
 
@@ -436,11 +448,12 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    }
    else
    {
+      endInBlock   = false;
       smoothingIndexEnd = nextBlockIndex(currentBlockIndex);
    }
 
-   if( startInBlock && endInBlock) return; // do not smooth if "far" from junction (both points lie in the current block)
-   // ToDo: do not smooth if junction does not force deceleration
+   if( startInBlock && endInBlock ) return; // do not smooth if "far" from junction (both points lie in the current block)
+   if( moveBuffer[smoothingIndexEnd].fastJunction ) return; // do not smooth if junction does not force deceleration
 
    float x1, y1, z1;
    float x2, y2, z2;
