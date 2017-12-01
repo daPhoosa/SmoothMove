@@ -247,13 +247,13 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
       float radius = sqrt( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
 
-      float junctionVel = sqrt(maxAccel * radius);
+      float junctionVelSq = maxAccel * radius;
 
       minBlockVel = min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel );
 
-      if( junctionVel < minBlockVel )
+      if( junctionVelSq < minBlockVel * minBlockVel )
       {
-         moveBuffer[index].maxStartVel = junctionVel;
+         moveBuffer[index].maxStartVel = sqrt(junctionVelSq);
          moveBuffer[index].fastJunction = false;
       }
       else
