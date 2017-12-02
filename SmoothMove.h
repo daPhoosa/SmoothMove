@@ -151,9 +151,6 @@
          void advancePostion();
          void constAccelTrajectory();
 
-         void startExactStop( int index );
-         bool checkExactStop();
-
          int addBaseBlock( const float & _x, const float & _y, const float & _z );
          int AddNewBlockIndex();
          void removeOldBlock();

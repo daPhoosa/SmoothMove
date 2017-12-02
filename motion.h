@@ -20,7 +20,6 @@
 
 void SmoothMove::startMoving( float _x, float _y, float _z ) //
 {
-   //Serial.println(blockCount);
 
    if(blockCount == 0)
    {
@@ -106,6 +105,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
 
 void SmoothMove::abortMotion() //
 {
+   blockCount = 0; // "forget" all queued blocks
    motionStopped = true;
 }
 
@@ -118,10 +118,6 @@ void SmoothMove::pause() //
 
 void SmoothMove::resume() //
 {
-   // add minimum delay to allow for smooth start
-   addDelay(1);
-   startExactStop(currentBlockIndex);
-
    motionPaused = false;
 }
 
