@@ -311,6 +311,7 @@ void SmoothMove::constAccelTrajectory()
    }
 
    // Reminder: the current (oldest) block should not be adjusted
+   lookAheadTime = 0;
 
    for(int i = blockCount; i > 0 ; i--)
    {
@@ -380,6 +381,8 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].peakVel - xVel[exit] ) * accelInverse * 1000000.0f);
          }
       }
+
+      lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
 
       // decrement pointers
       exit--;

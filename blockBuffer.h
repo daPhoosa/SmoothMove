@@ -75,9 +75,6 @@ void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _
    setMaxStartVel(index);  // set cornering/start speed
 
    constAccelTrajectory();
-
-   lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
-
 }
 
 
@@ -154,8 +151,6 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
       setMaxStartVel(index);  // set cornering/start speed
    
       constAccelTrajectory();
-   
-      lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
    }
 }
 
@@ -163,8 +158,6 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
 int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & _z )  // called to perform operations shared by all addBlock functions
 {
    int index = AddNewBlockIndex();
-
-   //Serial.print("*** ADD *** ");Serial.println(index);
 
    moveBuffer[index].X_start = X_end; // set start point to previous blocks end point
    moveBuffer[index].Y_start = Y_end;
