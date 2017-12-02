@@ -27,6 +27,8 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
       Y_end = _y;
       Z_end = _z;
 
+      lookAheadTime = 0;
+
       addLinear_Block(0, _x, _y, _z, 1.0f ); // add dummy block
       addDelay(10);
    }
@@ -106,6 +108,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
 void SmoothMove::abortMotion() //
 {
    blockCount = 0; // "forget" all queued blocks
+   lookAheadTime = 0;
    motionStopped = true;
 }
 
