@@ -100,7 +100,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 21;
+         const static int bufferCount = 5;
 
          struct block_t
          {
@@ -149,7 +149,7 @@
 
          uint32_t segmentStartTime, segmentTime, startOffset;
 
-         bool junctionSmoothingOff;
+         bool pathSmoothingOff;
 
 
          // *** PRIVATE FUNCTIONS ***

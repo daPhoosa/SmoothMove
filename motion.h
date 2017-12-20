@@ -424,7 +424,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
 
    getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
 
-   if( smoothingRadius < 0.003f || junctionSmoothingOff ) return; // return current position without smoothing if velocity is very low
+   if( smoothingRadius < 0.003f || pathSmoothingOff ) return; // return current position without smoothing if velocity is very low
 
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
@@ -548,10 +548,10 @@ float SmoothMove::getSpeed()
 
 void SmoothMove::junctionSmoothingOff()
 {
-   junctionSmoothingOff = true;
+   pathSmoothingOff = true;
 }
 
 void SmoothMove::junctionSmoothingOn()
 {
-   junctionSmoothingOff = false;
+   pathSmoothingOff = false;
 }

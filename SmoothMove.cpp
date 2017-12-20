@@ -43,7 +43,7 @@ SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
    motionFeedOverride  = 1.0f;
    extrudeRateOverride = 1.0f;
 
-   junctionSmoothingOff = false;
+   pathSmoothingOff = false;
 
    motionStopped = true;
 }
