@@ -44,6 +44,9 @@
          float setMotionRateOverride(  float scale );
          float setExtrudeRateOverride( float scale );
 
+         void junctionSmoothingOff();
+         void junctionSmoothingOn();
+
          void getTargetLocation( float & x, float & y, float & z );
          float getSpeed();
          bool blockQueueComplete();
@@ -145,6 +148,8 @@
          uint32_t lookAheadTime;
 
          uint32_t segmentStartTime, segmentTime, startOffset;
+
+         bool junctionSmoothingOff;
 
 
          // *** PRIVATE FUNCTIONS ***
