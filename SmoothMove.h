@@ -89,7 +89,6 @@
             * adding a block decrements the "newBlock" index
             * roll over is handled as needed
             * as each block is added, block acc/dec/vel segements are recomputed starting from null Block to Run Next Block.
-            * for ease of computation, accel = 0 at block boundaries
 
          */
 
@@ -100,7 +99,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 5;
+         const static int bufferCount = 21;
 
          struct block_t
          {
@@ -174,10 +173,5 @@
          void displayBlock( int i );
 
    };
-
-
-
-
-
 
 #endif
