@@ -29,7 +29,7 @@ void SmoothMove::startMoving( float _x, float _y, float _z ) //
 
       lookAheadTime = 0;
 
-      addLinear_Block(0, _x, _y, _z, 1.0f ); // add dummy block
+      addLinear_Block( _x, _y, _z, 1.0f ); // add dummy block
       addDelay(10);
    }
    else
@@ -496,7 +496,6 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
 
    switch(moveBuffer[index].moveType)
    {
-      case Rapid  :
       case Linear :
          x = moveBuffer[index].X_vector * position + moveBuffer[index].X_start;
          y = moveBuffer[index].Y_vector * position + moveBuffer[index].Y_start;

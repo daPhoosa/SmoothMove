@@ -31,8 +31,9 @@
 
          bool bufferVacancy();
 
-         void addLinear_Block( int type, float _x, float _y, float _z, float _feed );
-         void addArc_Block(    int type, float _x, float _y, float _feed, float centerX, float centerY );
+         void addRapid_Block(  float _x, float _y, float _z );
+         void addLinear_Block( float _x, float _y, float _z, float _feed );
+         void addArc_Block( int type, float _x, float _y, float _feed, float centerX, float centerY );
          void addDelay( int delayMS );
          void addExtrude( uint32_t positionSteps );
 
@@ -93,7 +94,6 @@
          */
 
          enum moveType_t {
-            Rapid,
             Linear,
             ArcCW,
             ArcCCW

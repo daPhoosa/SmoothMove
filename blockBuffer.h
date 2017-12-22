@@ -33,23 +33,19 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 }
 
 
-void SmoothMove::addLinear_Block(int type, float _x, float _y, float _z, float _feed)
+void SmoothMove::addRapid_Block( float _x, float _y, float _z )
+{
+   addLinear_Block( _x, _y, _z, maxVel );
+}
+
+
+void SmoothMove::addLinear_Block( float _x, float _y, float _z, float _feed )
 {
    int index = addBaseBlock( _x, _y, _z );
 
-   if(type == 1)
-   {
-      moveBuffer[index].moveType = Linear;     // feed move G1
+   moveBuffer[index].moveType = Linear;  // feed move G1
 
-      _feed = abs( _feed ) * motionFeedOverride; // apply feed rate override
-      moveBuffer[index].targetVel = constrain( _feed, 0.01f, maxVel);  // constrain to reasonable limits
-   }
-   else
-   {
-      moveBuffer[index].moveType = Rapid; // rapid move G0
-
-      moveBuffer[index].targetVel = maxVel;  // rapids always aim for max vel
-   }
+   moveBuffer[index].targetVel = constrain( _feed * motionFeedOverride, 0.01f, maxVel );  // constrain to reasonable limits
 
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
 
@@ -85,11 +81,11 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
 
    if(type == 2)
    {
-         moveBuffer[index].moveType = ArcCW; // Clockwise Arc G2
+      moveBuffer[index].moveType = ArcCW; // Clockwise Arc G2
    }
    else
    {
-         moveBuffer[index].moveType = ArcCCW; // Counter-Clockwise Arc G3
+      moveBuffer[index].moveType = ArcCCW; // Counter-Clockwise Arc G3
    }
 
    float dXstart = moveBuffer[index].X_start - centerX;
@@ -110,16 +106,16 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
 
    if(moveBuffer[index].moveType == ArcCW)
    {
-         arcAngle = moveBuffer[index].startAngle - endAngle;
+      arcAngle = moveBuffer[index].startAngle - endAngle;
    }
    else
    {
-         arcAngle = endAngle - moveBuffer[index].startAngle;
+      arcAngle = endAngle - moveBuffer[index].startAngle;
    }
 
    if(arcAngle < 0.0001f)     // must be positive and matching start and stop locations indicates full circle
    {
-         arcAngle += 6.2831853f;
+      arcAngle += 6.2831853f;
    }
 
    moveBuffer[index].length = arcAngle * moveBuffer[index].radius;
@@ -129,16 +125,15 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    // check start and end point consistency
    if( abs( startRadiusSq - endRadiusSq ) > 0.000645f )  // both radii should match within .025mm (.001in)
    {
-         Serial.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
-         while(true); // hang - probably a better way to do this
+      Serial.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
+      while(true); // hang - probably a better way to do this
    }
 
    moveBuffer[index].X_vector = centerX;
    moveBuffer[index].Y_vector = centerY;
    moveBuffer[index].Z_vector = 0.0f;
 
-   _feed = abs( _feed ) * motionFeedOverride;  // apply feed rate override
-   _feed = constrain( _feed, 0.01f, sqrt(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
+   _feed = constrain( _feed * motionFeedOverride, 0.01f, sqrt(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
    moveBuffer[index].targetVel    = min( _feed, maxVel );
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
 
