@@ -33,6 +33,16 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 }
 
 
+void SmoothMove::addDwell_Block( int delayMS )  // add block with no movement to block que, then append delay
+{
+   if( blockCount < bufferCount - 1 )
+   {
+      addLinear_Block( X_end, Y_end, Z_end, maxVel );
+   }
+   addDelay( delayMS );
+}
+
+
 void SmoothMove::addRapid_Block( float _x, float _y, float _z )
 {
    addLinear_Block( _x, _y, _z, maxVel );
@@ -43,7 +53,7 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float _feed )
 {
    int index = addBaseBlock( _x, _y, _z );
 
-   moveBuffer[index].moveType = Linear;  // feed move G1
+   moveBuffer[index].moveType = Linear;  // feed move G0/G1
 
    moveBuffer[index].targetVel = constrain( _feed * motionFeedOverride, 0.01f, maxVel );  // constrain to reasonable limits
 
@@ -125,7 +135,7 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    // check start and end point consistency
    if( abs( startRadiusSq - endRadiusSq ) > 0.000645f )  // both radii should match within .025mm (.001in)
    {
-      Serial.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
+      SERIAL_PORT.println("ARC ERROR - Start-Center-End Radius Mismatch"); // length of the two radii are too different
       while(true); // hang - probably a better way to do this
    }
 
