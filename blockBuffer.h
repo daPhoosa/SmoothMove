@@ -166,8 +166,6 @@ int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & 
 
    moveBuffer[index].dwell = 0;  // assume continuous motion
 
-   moveBuffer[index].extrudePosition = moveBuffer[previousBlockIndex(index)].extrudePosition; // propagate extrude position to new block
-
    return index;
 }
 
@@ -185,13 +183,21 @@ void SmoothMove::addDelay(int delayMS)
 }
 
 
-void SmoothMove::addExtrude( uint32_t positionSteps )
+void SmoothMove::addExtrudeMM( float positionMM )
 {
-   moveBuffer[newBlockIndex].extrudePosition = positionSteps;
+   
+   moveBuffer[newBlockIndex].extrudeDist = ( positionMM - extrudeProgPos ) * extrudeRateOverride;
 
-   float extrudeLength = float( positionSteps - moveBuffer[previousBlockIndex()].extrudePosition );
-   moveBuffer[newBlockIndex].extrudeScaleFactor = extrudeLength / moveBuffer[newBlockIndex].length;
+   if( moveBuffer[newBlockIndex].extrudeDist > 0.001f )
+   {
+      moveBuffer[newBlockIndex].extrudeScaleFactor = moveBuffer[newBlockIndex].extrudeDist / moveBuffer[newBlockIndex].length;
+   }
+   else
+   {
+      moveBuffer[newBlockIndex].extrudeScaleFactor = 0.0f;
+   }
 
+   extrudeProgPos = positionMM;
 }
 
 
@@ -207,6 +213,7 @@ void SmoothMove::removeOldBlock()
    {
       blockPosition -= moveBuffer[currentBlockIndex].length;
       moveBuffer[currentBlockIndex].targetVel = 0.0f;
+      extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist;
 
       currentBlockIndex = nextBlockIndex(currentBlockIndex);
       blockCount--;

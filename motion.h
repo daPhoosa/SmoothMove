@@ -75,8 +75,8 @@ void SmoothMove::setPosE( float t_e )
 {
    if( !motionStopped ) motionStopped = true;
 
-   // ******* add logic
-
+   extrudeProgPos = t_e;
+   extrudeMachPos = 0.0f;
 }
 
 
@@ -544,9 +544,9 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
 }
 
 
-uint32_t SmoothMove::getExtrudeLocationSteps()
+float SmoothMove::getExtrudeLocationMM()
 {
-   return moveBuffer[previousBlockIndex(currentBlockIndex)].extrudePosition + uint32_t( moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition );
+   return moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
 }
 
 

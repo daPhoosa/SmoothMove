@@ -39,7 +39,7 @@
          void addLinear_Block( float _x, float _y, float _z, float _feed );
          void addArc_Block( int type, float _x, float _y, float _feed, float centerX, float centerY );
          void addDwell_Block( int delayMS );
-         void addExtrude( uint32_t positionSteps );
+         void addExtrudeMM( float positionMM );
 
          void setPosition( float _x, float _y, float _z );
          void setPosX( float t_x );
@@ -58,9 +58,10 @@
          void junctionSmoothingOn();
 
          void getTargetLocation( float & x, float & y, float & z );
+         float getExtrudeLocationMM();
+
          float getSpeed();
          bool blockQueueComplete();
-         uint32_t getExtrudeLocationSteps();
 
          int  getBlockCount();
 
@@ -123,8 +124,8 @@
             float accelEndPoint, velEndPoint, decelLength; // length of each segement
             uint32_t accelTime,  velTime,     decelTime,  dwell;   // time to complete each segement
 
-            uint32_t extrudePosition, extrudePositionProgram;
-            float extrudeScaleFactor;
+            float extrudeScaleFactor, extrudeDist;
+            uint32_t minExtrudeTime;
 
             moveType_t moveType;
 
@@ -135,6 +136,8 @@
          float xVel_Sq[bufferCount];   // boundary velocities squared
 
          float motionFeedOverride, extrudeRateOverride;
+
+         float extrudeProgPos, extrudeMachPos, extrudeMaxVel, extrudeAccel, extrudeAccelInv;
 
          float blockPosition, velocityNow;
 
