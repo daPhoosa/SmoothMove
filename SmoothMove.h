@@ -21,6 +21,10 @@
 #ifndef SmoothMove_h
    #define SmoothMove_h
 
+   #ifndef SERIAL_PORT
+      #define SERIAL_PORT Serial
+   #endif
+
    #include <arduino.h>
 
    class SmoothMove
@@ -37,10 +41,15 @@
          void addDwell_Block( int delayMS );
          void addExtrude( uint32_t positionSteps );
 
-         void startMoving( float _x, float _y, float _z );
+         void setPosition( float _x, float _y, float _z );
+         void setPosX( float t_x );
+         void setPosY( float t_y );
+         void setPosZ( float t_z );
+         void setPosE( float t_e );
+
+         void startMoving();
+         void stopMoving();
          void abortMotion();
-         void pause();
-         void resume();
 
          float setMotionRateOverride(  float scale );
          float setExtrudeRateOverride( float scale );
@@ -99,7 +108,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 21;
+         const static int bufferCount = 5;
 
          struct block_t
          {
@@ -138,15 +147,11 @@
          float maxAccel, accelInverse, accelInverseHalf, accelDouble;
          float maxVel;
 
-         uint32_t exactStopStartTime, exactStopDelay;
-         bool exactStopActive;
+         bool motionStopped;
 
-         bool motionStopped, motionPaused;
-
-         float totalDistance, totalTime;
          uint32_t lookAheadTime;
 
-         uint32_t segmentStartTime, segmentTime, startOffset;
+         uint32_t segmentStartTime, segmentTime;
 
          bool pathSmoothingOff;
 

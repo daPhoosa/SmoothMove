@@ -18,110 +18,132 @@
 */
 
 
-void SmoothMove::startMoving( float _x, float _y, float _z ) //
+void SmoothMove::setPosition( float t_x, float t_y, float t_z )
+{
+   setPosX( t_x );
+   setPosY( t_y );
+   setPosZ( t_z );   
+}
+
+
+void SmoothMove::setPosX( float t_x )
+{
+   if( !motionStopped ) motionStopped = true;
+
+   if(blockCount == 0)
+   {
+      X_end = t_x; // no queued blocks, so end point equals start point
+   }
+   else
+   {
+      moveBuffer[currentBlockIndex].X_start = t_x; // set start of first block to current position
+   }
+}
+
+
+void SmoothMove::setPosY( float t_y )
+{
+   if( !motionStopped ) motionStopped = true;
+
+   if(blockCount == 0)
+   {
+      Y_end = t_y; // no queued blocks, so end point equals start point
+   }
+   else
+   {
+      moveBuffer[currentBlockIndex].Y_start = t_y; // set start of first block to current position
+   }
+}
+
+
+void SmoothMove::setPosZ( float t_z )
+{
+   if( !motionStopped ) motionStopped = true;
+
+   if(blockCount == 0)
+   {
+      Z_end = t_z; // no queued blocks, so end point equals start point
+   }
+   else
+   {
+      moveBuffer[currentBlockIndex].Z_start = t_z; // set start of first block to current position
+   }
+}
+
+
+void SmoothMove::setPosE( float t_e )
+{
+   if( !motionStopped ) motionStopped = true;
+
+   // ******* add logic
+
+}
+
+
+void SmoothMove::startMoving() //
 {
 
    if(blockCount == 0)
    {
-      X_end = _x; // no queued blocks, so end point equals start point
-      Y_end = _y;
-      Z_end = _z;
-
-      lookAheadTime = 0;
-
-      addLinear_Block( _x, _y, _z, 1.0f ); // add dummy block
-      addDelay(10);
+      addLinear_Block( X_end, Y_end, Z_end, 1.0f ); // add dummy block
+      addDelay( 100 );   // give time for more blocks to be added to buffer before starting to move
    }
    else
    {
       // Update first block start position
       float dx, dy, dz;
 
-      int B_0 = currentBlockIndex;       // dummy block
-      int B_1 = nextBlockIndex(B_0);     // first real block
-      int B_2 = nextBlockIndex(B_1);     // second real block
+      int B_0 = currentBlockIndex;       // first block
+      int B_1 = nextBlockIndex(B_0);     // next block
 
-      moveBuffer[B_0].X_start  = _x; // set start to current position
-      moveBuffer[B_0].Y_start  = _y;
-      moveBuffer[B_0].Z_start  = _z;
-
-      moveBuffer[B_0].accelTime     = 0;
-      moveBuffer[B_0].accelEndPoint = 0.0f;
-
-      moveBuffer[B_0].velTime       = 0;
-      moveBuffer[B_0].velEndPoint   = 0.0f;
-
-      moveBuffer[B_0].decelTime     = 0;
-      moveBuffer[B_0].decelLength   = 0.0f;
-
-      moveBuffer[B_0].length    = 0.0f;
-      moveBuffer[B_0].targetVel = 0.0f;
-
-      moveBuffer[B_0].dwell = 1; // 200ms delay on start
-
-
-      moveBuffer[B_1].X_start  = _x; // set start to current position
-      moveBuffer[B_1].Y_start  = _y;
-      moveBuffer[B_1].Z_start  = _z;
-
-      if(blockCount > 2)
+      if( blockCount > 1 )
       {
-         dx = moveBuffer[B_2].X_start - moveBuffer[B_1].X_start;
-         dy = moveBuffer[B_2].Y_start - moveBuffer[B_1].Y_start;
-         dz = moveBuffer[B_2].Z_start - moveBuffer[B_1].Z_start;
+         dx = moveBuffer[B_1].X_start - moveBuffer[B_0].X_start;
+         dy = moveBuffer[B_1].Y_start - moveBuffer[B_0].Y_start;
+         dz = moveBuffer[B_1].Z_start - moveBuffer[B_0].Z_start;
       }
       else
       {
-         dx = X_end - _x;
-         dy = Y_end - _y;
-         dz = Z_end - _z;
+         dx = moveBuffer[B_0].X_start - X_end;
+         dy = moveBuffer[B_0].Y_start - Y_end;
+         dz = moveBuffer[B_0].Z_start - Z_end;
       }
 
-      moveBuffer[B_1].length = sqrt(dx * dx + dy * dy + dz * dz);
+      moveBuffer[B_0].length = sqrt(dx * dx + dy * dy + dz * dz);
 
-      if(moveBuffer[B_1].length > 0.0001f)
+      if(moveBuffer[B_0].length > 0.0001f)
       {
-         float inverseLength = 1.0f / moveBuffer[B_1].length;
-         moveBuffer[B_1].X_vector = dx * inverseLength;  // line unit vector
-         moveBuffer[B_1].Y_vector = dy * inverseLength;
-         moveBuffer[B_1].Z_vector = dz * inverseLength;
+         float inverseLength = 1.0f / moveBuffer[B_0].length;
+         moveBuffer[B_0].X_vector = dx * inverseLength;  // line unit vector
+         moveBuffer[B_0].Y_vector = dy * inverseLength;
+         moveBuffer[B_0].Z_vector = dz * inverseLength;
       }
       else
       {
-         moveBuffer[B_1].X_vector = 0.0f;  // line unit vector
-         moveBuffer[B_1].Y_vector = 0.0f;
-         moveBuffer[B_1].Z_vector = 0.0f;
+         moveBuffer[B_0].X_vector = 0.0f;  // line unit vector
+         moveBuffer[B_0].Y_vector = 0.0f;
+         moveBuffer[B_0].Z_vector = 0.0f;
       }
 
       constAccelTrajectory();
    }
 
-   totalDistance = 0.0f;
-
-   motionPaused  = false;
    motionStopped = false;
-   segmentTime = 1000;
-   segmentStartTime = startOffset = micros();
+   segmentTime = 0;
+   segmentStartTime = micros();
 }
 
+
+void SmoothMove::stopMoving()
+{
+   motionStopped = true;
+}
 
 void SmoothMove::abortMotion() //
 {
    blockCount = 0; // "forget" all queued blocks
    lookAheadTime = 0;
    motionStopped = true;
-}
-
-
-void SmoothMove::pause() //
-{
-   motionPaused = true;
-}
-
-
-void SmoothMove::resume() //
-{
-   motionPaused = false;
 }
 
 
@@ -151,7 +173,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
          switch( segmentIndex )
          {
             case 4 : // switch to ACCELERATION
-               totalDistance += moveBuffer[currentBlockIndex].length;
                removeOldBlock(); // previous block complete, index to next block
 
                segmentTime    = moveBuffer[currentBlockIndex].accelTime;
@@ -419,12 +440,14 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       return;
    }
 
+   getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
+
+   if( pathSmoothingOff ) return; // smoothing turned off
+
    // symetric smoothing
    float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * accelInverseHalf );
 
-   getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
-
-   if( smoothingRadius < 0.003f || pathSmoothingOff ) return; // return current position without smoothing if velocity is very low
+   if( smoothingRadius < 0.003f ) return; // return current position without smoothing if velocity is very low
 
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
@@ -461,7 +484,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    float x2, y2, z2;
 
    // get trailing smoothing position
-   if(startInBlock)
+   if( startInBlock )
    {
       getPos( x1, y1, z1, smoothingIndexStart, smoothingPosStart); // smoothing start position
    }
