@@ -557,7 +557,30 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
 
 float SmoothMove::getExtrudeLocationMM()
 {
-   return moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
+   static float extrudePos, extrudeVel;
+
+   if( moveBuffer[currentBlockIndex].staticExtrude )
+   {
+      float deltaTime = float(millis() - segmentStartTime) / 1000000.0f;
+      float distLeft = moveBuffer[currentBlockIndex].extrudeDist - extrudePos;
+      float decelDist = extrudeVel * extrudeVel / (2.0f * extrudeAccel);
+
+      if( decelDist < distLeft ) // accel / const vel
+      {
+         extrudeVel = min(extrudeMaxVel, extrudeAccel * deltaTime);
+
+      }
+      else
+      {
+         extrudeVel = sqrt( 2.0f * distLeft * extrudeAccel );
+         extrudePos = 
+      }
+      
+   }
+   else
+   {
+      return moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
+   }
 }
 
 

@@ -110,7 +110,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 21;
+         const static int bufferCount = 5;
 
          struct block_t
          {
@@ -127,6 +127,7 @@
 
             float extrudeScaleFactor, extrudeDist;
             uint32_t minExtrudeTime;
+            bool staticExtrude;
 
             moveType_t moveType;
 
@@ -138,7 +139,8 @@
 
          float motionFeedOverride, extrudeRateOverride;
 
-         float extrudeProgPos, extrudeMachPos, extrudeMaxVel, extrudeAccel, extrudeAccelInv;
+         float extrudeProgPos, extrudeMachPos;
+         float extrudeMaxVel, extrudeAccel, extrudeAccelInv;
 
          float blockPosition, velocityNow;
 

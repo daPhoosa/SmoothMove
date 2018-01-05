@@ -198,13 +198,25 @@ void SmoothMove::addExtrudeMM( float positionMM )
 
 void SmoothMove::computeExtrudeFactors( int index )
 {
+   const static float extrudeInverse = 1.0f / extrudeAccel;
+
    if( moveBuffer[index].extrudeDist > 0.001f )
    {
-      moveBuffer[index].extrudeScaleFactor = moveBuffer[index].extrudeDist / moveBuffer[index].length;
+      if( moveBuffer[index].length > 0.001f )
+      {
+         moveBuffer[index].extrudeScaleFactor = moveBuffer[index].extrudeDist / moveBuffer[index].length;
+         moveBuffer[index].staticExtrude = false;
+      }
+      else
+      {
+         moveBuffer[index].staticExtrude = true;
+      }
+      
    }
    else
    {
       moveBuffer[index].extrudeScaleFactor = 0.0f;
+      moveBuffer[index].staticExtrude = false;
    }
 }
 

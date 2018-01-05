@@ -42,7 +42,10 @@ SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
 
    motionFeedOverride  = 1.0f;
    extrudeRateOverride = 1.0f;
+
    extrudeProgPos = 0.0f;
+   extrudeAccel   = 10000.0f; // [mm/s^2]
+   extrudeMaxVel  = 25.0f;    // [mm/s]
 
    pathSmoothingOff = false;
 
