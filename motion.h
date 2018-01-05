@@ -85,7 +85,7 @@ void SmoothMove::setPosE( float t_e )
    if( !motionStopped ) motionStopped = true;
 
    extrudeProgPos = t_e;
-   extrudeMachPos = 0.0f;
+   extrudeMachPos = t_e;
 }
 
 
