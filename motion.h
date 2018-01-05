@@ -26,6 +26,15 @@ void SmoothMove::setPosition( float t_x, float t_y, float t_z )
 }
 
 
+void SmoothMove::setPosition( float t_x, float t_y, float t_z, float t_e )
+{
+   setPosX( t_x );
+   setPosY( t_y );
+   setPosZ( t_z );   
+   setPosE( t_e ); 
+}
+
+
 void SmoothMove::setPosX( float t_x )
 {
    if( !motionStopped ) motionStopped = true;
@@ -124,6 +133,8 @@ void SmoothMove::startMoving() //
          moveBuffer[B_0].Y_vector = 0.0f;
          moveBuffer[B_0].Z_vector = 0.0f;
       }
+
+      computeExtrudeFactors( B_0 );
 
       constAccelTrajectory();
    }

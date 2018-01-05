@@ -42,6 +42,7 @@
          void addExtrudeMM( float positionMM );
 
          void setPosition( float _x, float _y, float _z );
+         void setPosition( float t_x, float t_y, float t_z, float t_e );
          void setPosX( float t_x );
          void setPosY( float t_y );
          void setPosZ( float t_z );
@@ -109,7 +110,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 5;
+         const static int bufferCount = 21;
 
          struct block_t
          {
@@ -178,6 +179,7 @@
 
          void setMaxStartVel( const int & index );
          void getPos( float & x, float & y, float & z, const int & index, const float & position );
+         void computeExtrudeFactors( int index );
 
          void displayBlock( int i );
 

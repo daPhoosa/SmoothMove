@@ -188,16 +188,22 @@ void SmoothMove::addExtrudeMM( float positionMM )
    
    moveBuffer[newBlockIndex].extrudeDist = ( positionMM - extrudeProgPos ) * extrudeRateOverride;
 
-   if( moveBuffer[newBlockIndex].extrudeDist > 0.001f )
+   computeExtrudeFactors( newBlockIndex );
+
+   extrudeProgPos = positionMM;
+}
+
+
+void SmoothMove::computeExtrudeFactors( int index )
+{
+   if( moveBuffer[index].extrudeDist > 0.001f )
    {
-      moveBuffer[newBlockIndex].extrudeScaleFactor = moveBuffer[newBlockIndex].extrudeDist / moveBuffer[newBlockIndex].length;
+      moveBuffer[index].extrudeScaleFactor = moveBuffer[index].extrudeDist / moveBuffer[index].length;
    }
    else
    {
-      moveBuffer[newBlockIndex].extrudeScaleFactor = 0.0f;
+      moveBuffer[index].extrudeScaleFactor = 0.0f;
    }
-
-   extrudeProgPos = positionMM;
 }
 
 
