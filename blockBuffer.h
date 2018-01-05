@@ -165,6 +165,8 @@ int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & 
    Z_end = _z;
 
    moveBuffer[index].dwell = 0;  // assume continuous motion
+   moveBuffer[index].extrudeDist = 0.0f; // assume no extrude
+   moveBuffer[index].extrudeScaleFactor = 0.0f;
 
    return index;
 }
@@ -219,7 +221,11 @@ void SmoothMove::removeOldBlock()
    {
       blockPosition -= moveBuffer[currentBlockIndex].length;
       moveBuffer[currentBlockIndex].targetVel = 0.0f;
-      extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist;
+
+      if( abs(moveBuffer[currentBlockIndex].extrudeDist) > 0.0001f )
+      {
+         extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist;
+      }
 
       currentBlockIndex = nextBlockIndex(currentBlockIndex);
       blockCount--;
