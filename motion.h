@@ -557,27 +557,31 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
 
 float SmoothMove::getExtrudeLocationMM()
 {
-   static float extrudePos, extrudeVel;
+   static float extrudePos = 0;
+   static uint32_t lastTime;
 
-   if( moveBuffer[currentBlockIndex].staticExtrude )
+   uint32_t timeNow = micros();
+   float deltaTime = float(timeNow - lastTime) * (1.0f / 1000000.0f);
+   lastTime = timeNow;
+
+   if( moveBuffer[currentBlockIndex].staticExtrude ) // extrude with no head movement
    {
-      float deltaTime = float(millis() - segmentStartTime) / 1000000.0f;
       float distLeft = moveBuffer[currentBlockIndex].extrudeDist - extrudePos;
-      float decelDist = extrudeVel * extrudeVel / (2.0f * extrudeAccel);
+      float margin = min(extrudePos, distLeft);
+      float velocity = min( sqrt(2.0f * margin * extrudeAccel), extrudeMaxVel );
 
-      if( decelDist < distLeft ) // accel / const vel
-      {
-         extrudeVel = min(extrudeMaxVel, extrudeAccel * deltaTime);
+      extrudePos += velocity * deltaTime;
 
-      }
-      else
+      if( extrudePos > moveBuffer[currentBlockIndex].extrudeDist ) // end of extrude reached
       {
-         extrudeVel = sqrt( 2.0f * distLeft * extrudeAccel );
-         extrudePos = 
+         extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist;
+         extrudePos = 0.0f;
+         moveBuffer[currentBlockIndex].staticExtrude = false;
+         return extrudeMachPos;
       }
-      
+      return extrudeMachPos + extrudePos; // middle of extrude
    }
-   else
+   else  // extrude while moving
    {
       return moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
    }
