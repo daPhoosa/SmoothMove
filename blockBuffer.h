@@ -277,7 +277,7 @@ int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of t
 
 bool SmoothMove::blockQueueComplete()
 {
-   if( blockCount < 2 && segmentIndex > 2 ) // must be on last block and waiting for next block
+   if( blockCount == 0 || (blockCount == 1 && segmentIndex > 2) ) // no blocks or must be on last block and waiting for next block
    {
       return true;
    }
