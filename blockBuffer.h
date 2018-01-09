@@ -60,7 +60,7 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float _feed )
    float dx = _x - moveBuffer[index].X_start;
    float dy = _y - moveBuffer[index].Y_start;
    float dz = _z - moveBuffer[index].Z_start;
-   moveBuffer[index].length = sqrt(dx * dx + dy * dy + dz * dz);
+   moveBuffer[index].length = sqrtf(dx * dx + dy * dy + dz * dz);
 
    if(moveBuffer[index].length > 0.001f)
    {
@@ -99,15 +99,15 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    float dXstart = moveBuffer[index].X_start - centerX;
    float dYstart = moveBuffer[index].Y_start - centerY;
    float startRadiusSq = dXstart * dXstart + dYstart * dYstart;  // used later to compare start/end radii
-   moveBuffer[index].radius = sqrt(startRadiusSq);
+   moveBuffer[index].radius = sqrtf(startRadiusSq);
    
-   moveBuffer[index].startAngle = atan2(dYstart, dXstart);
+   moveBuffer[index].startAngle = atan2f(dYstart, dXstart);
    if(moveBuffer[index].startAngle < 0.0f) moveBuffer[index].startAngle += 6.2831853f; // force positive
 
    float dXend = X_end - centerX;
    float dYend = Y_end - centerY;
 
-   float endAngle = atan2(dYend, dXend);
+   float endAngle = atan2f(dYend, dXend);
    if(endAngle < 0.0f) endAngle += 6.2831853f; // force positive
 
    float arcAngle;
@@ -141,7 +141,7 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    moveBuffer[index].Y_vector = centerY;
    moveBuffer[index].Z_vector = 0.0f;
 
-   _feed = constrain( _feed * motionFeedOverride, 0.01f, sqrt(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
+   _feed = constrain( _feed * motionFeedOverride, 0.01f, sqrtf(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
    moveBuffer[index].targetVel    = min( _feed, maxVel );
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
 
