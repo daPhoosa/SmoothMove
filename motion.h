@@ -143,7 +143,7 @@ void SmoothMove::startMoving() //
          dz = moveBuffer[B_0].Z_start - Z_end;
       }
 
-      moveBuffer[B_0].length = sqrt(dx * dx + dy * dy + dz * dz);
+      moveBuffer[B_0].length = sqrtf(dx * dx + dy * dy + dz * dz);
 
       if(moveBuffer[B_0].length > 0.0001f)
       {
@@ -296,7 +296,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
       z1 -= z2;
       float pointDistSq = x1 * x1 + y1 * y1 + z1 * z1;
 
-      float radius = sqrt( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
+      float radius = sqrtf( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
 
       float junctionVelSq = maxAccel * radius;
 
@@ -304,7 +304,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
       if( junctionVelSq < minBlockVel * minBlockVel )
       {
-         moveBuffer[index].maxStartVel = sqrt(junctionVelSq);
+         moveBuffer[index].maxStartVel = sqrtf(junctionVelSq);
          moveBuffer[index].fastJunction = false;
       }
       else
@@ -345,13 +345,13 @@ void SmoothMove::constAccelTrajectory()
       {
          // not enough room to decel from startVel to endVel
          xVel_Sq[start] = xVel_Sq[exit] + accelDouble * moveBuffer[exit].length; // set startVel lower
-         xVel[start]    = sqrt(xVel_Sq[start]);
+         xVel[start]    = sqrtf(xVel_Sq[start]);
       }
       else if(distToDeltaVel < -moveBuffer[exit].length)
       {
          // not enough room to accel from startVel to endVel
          xVel_Sq[exit] = xVel_Sq[start] + accelDouble * moveBuffer[exit].length; // set exitVel lower
-         xVel[exit]    = sqrt(xVel_Sq[exit]);
+         xVel[exit]    = sqrtf(xVel_Sq[exit]);
       }
 
       // increment pointers
@@ -380,7 +380,7 @@ void SmoothMove::constAccelTrajectory()
          // not enough room to accel from startVel to endVel
 
          xVel_Sq[exit] = xVel_Sq[start] + accelDouble * moveBuffer[index].length; // set exitVel lower
-         xVel[exit]    = sqrt(xVel_Sq[exit]);
+         xVel[exit]    = sqrtf(xVel_Sq[exit]);
 
          moveBuffer[index].peakVel = xVel[start];  // shouldn't need this...
 
@@ -426,7 +426,7 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[index].velEndPoint    = moveBuffer[index].accelEndPoint; // zero length
             moveBuffer[index].decelLength   += halfExcessLength;
 
-            moveBuffer[index].peakVel = sqrt( xVel_Sq[start] + accelDouble * moveBuffer[index].accelEndPoint );
+            moveBuffer[index].peakVel = sqrtf( xVel_Sq[start] + accelDouble * moveBuffer[index].accelEndPoint );
 
             moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].peakVel - xVel[start]) * accelInverse * 1000000.0f);
             moveBuffer[index].velTime   = 0;
@@ -567,8 +567,8 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
             angle = position / moveBuffer[index].radius;
          }
          angle += moveBuffer[index].startAngle;
-         x = moveBuffer[index].X_vector + moveBuffer[index].radius * cos(angle);
-         y = moveBuffer[index].Y_vector + moveBuffer[index].radius * sin(angle);
+         x = moveBuffer[index].X_vector + moveBuffer[index].radius * cosf(angle);
+         y = moveBuffer[index].Y_vector + moveBuffer[index].radius * sinf(angle);
          z = moveBuffer[index].Z_vector * position + moveBuffer[index].Z_start;
          break;
    }
@@ -588,7 +588,7 @@ float SmoothMove::getExtrudeLocationMM()
    {
       float distLeft = moveBuffer[currentBlockIndex].extrudeDist - extrudePos;
       float margin = min(extrudePos, distLeft);
-      float velocity = min( sqrt(2.0f * margin * extrudeAccel), extrudeMaxVel );
+      float velocity = min( sqrtf(2.0f * margin * extrudeAccel), extrudeMaxVel );
 
       extrudePos += velocity * deltaTime;
 
