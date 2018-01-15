@@ -33,8 +33,8 @@ SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
 
    maxVel       = abs( _velMax );
 
-   cornerRoundDist = max( _cornerRounding, 0.001f );
-   cornerRoundDistSq = cornerRoundDist * cornerRoundDist;
+   cornerRoundDist     = max( _cornerRounding, 0.001f );
+   cornerRoundDistSq   = cornerRoundDist * cornerRoundDist;
    cornerRoundDistHalf = cornerRoundDist * 0.5f;
 
    motionFeedOverride  = 1.0f;

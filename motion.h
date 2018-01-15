@@ -72,10 +72,10 @@ void SmoothMove::startMoving() //
 {
    // SetPosition(...) must be used before this is run
 
-   blockCount = 0; // "forget" all previos blocks
+   blockCount    = 0; // "forget" all previous blocks
    lookAheadTime = 0;
-   segmentIndex = 0;
-   segmentTime = 0;
+   segmentIndex  = 0;
+   segmentTime   = 0;
 
    addRapid_Block( X_end, Y_end, Z_end ); // add dummy block at current position, zero length
    addDelay( 100 );   // give time for more blocks to be added to buffer before starting to move
@@ -86,89 +86,8 @@ void SmoothMove::startMoving() //
    moveBuffer[currentBlockIndex].velTime   = 0;
    moveBuffer[currentBlockIndex].decelTime = 0;
 
-   motionStopped = false;
+   motionStopped    = false;
    segmentStartTime = micros();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   /*
-
-   if(blockCount < 2)
-   {
-      if( blockCount == 1 )
-      {
-         currentBlockIndex = nextBlockIndex(currentBlockIndex); // old block has unknown data, move to next
-         segmentIndex = 0;
-         blockCount--;
-      }
-
-      addLinear_Block( X_end, Y_end, Z_end, 1.0f ); // add dummy block at current position
-      addDelay( 100 );   // give time for more blocks to be added to buffer before starting to move
-   }
-   else
-   {
-      // Update first block start position
-      float dx, dy, dz;
-
-      int B_0 = currentBlockIndex;       // first block
-      int B_1 = nextBlockIndex(B_0);     // next block
-
-      if( blockCount > 1 )
-      {
-         dx = moveBuffer[B_1].X_start - moveBuffer[B_0].X_start;
-         dy = moveBuffer[B_1].Y_start - moveBuffer[B_0].Y_start;
-         dz = moveBuffer[B_1].Z_start - moveBuffer[B_0].Z_start;
-      }
-      else
-      {
-         dx = moveBuffer[B_0].X_start - X_end;
-         dy = moveBuffer[B_0].Y_start - Y_end;
-         dz = moveBuffer[B_0].Z_start - Z_end;
-      }
-
-      moveBuffer[B_0].length = sqrtf(dx * dx + dy * dy + dz * dz);
-
-      if(moveBuffer[B_0].length > 0.0001f)
-      {
-         float inverseLength = 1.0f / moveBuffer[B_0].length;
-         moveBuffer[B_0].X_vector = dx * inverseLength;  // line unit vector
-         moveBuffer[B_0].Y_vector = dy * inverseLength;
-         moveBuffer[B_0].Z_vector = dz * inverseLength;
-      }
-      else
-      {
-         moveBuffer[B_0].X_vector = 0.0f;  // line unit vector
-         moveBuffer[B_0].Y_vector = 0.0f;
-         moveBuffer[B_0].Z_vector = 0.0f;
-      }
-
-      computeExtrudeFactors( B_0 );
-
-      constAccelTrajectory();
-   }
-
-   motionStopped = false;
-   segmentTime = 0;
-   segmentStartTime = micros();
-
-   */
 }
 
 
@@ -324,17 +243,17 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 void SmoothMove::constAccelTrajectory()
 {
    int exit  = newBlockIndex;
-   int start = exit + 1;
-   if(start == bufferCount) start = 0;  // wrap buffer pointer
+   int start = previousBlockIndex(exit);
 
    xVel[exit]    = 0.0f;   // newest block always ends at zero
    xVel_Sq[exit] = 0.0f;
 
-   for(int i = blockCount - 1; i > 0 ; i--)
+   for( int i = blockCount - 1; i > 0 ; i-- )
    {
       // iterate through the active blocks backwards (newest to oldest)
       //    On the first pass, only border velocities are changed
       //    These can only be made slower, never faster
+      //    Reminder: the current (oldest) block should not be adjusted
 
       xVel[start] = moveBuffer[exit].maxStartVel;
       xVel_Sq[start] = xVel[start] * xVel[start];
@@ -354,18 +273,14 @@ void SmoothMove::constAccelTrajectory()
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
       }
 
-      // increment pointers
-      exit++;
-      start++;
-
-      if(exit  == bufferCount) exit  = 0;  // wrap buffer pointer
-      if(start == bufferCount) start = 0;  // wrap buffer pointer
+      // move backwards through block queue
+      exit  = previousBlockIndex(exit);
+      start = previousBlockIndex(start);
    }
 
-   // Reminder: the current (oldest) block should not be adjusted
-   lookAheadTime = 0;
+   lookAheadTime = 0; // zero before re-summing total
 
-   for(int i = blockCount; i > 0 ; i--)
+   for( int i = blockCount; i > 0 ; i-- )
    {
       // iterate forward
       //    check and set boundary velocities
@@ -426,7 +341,7 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[index].velEndPoint    = moveBuffer[index].accelEndPoint; // zero length
             moveBuffer[index].decelLength   += halfExcessLength;
 
-            moveBuffer[index].peakVel = sqrtf( xVel_Sq[start] + accelDouble * moveBuffer[index].accelEndPoint );
+            moveBuffer[index].peakVel   = sqrtf( xVel_Sq[start] + accelDouble * moveBuffer[index].accelEndPoint );
 
             moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].peakVel - xVel[start]) * accelInverse * 1000000.0f);
             moveBuffer[index].velTime   = 0;
@@ -436,12 +351,9 @@ void SmoothMove::constAccelTrajectory()
 
       lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
 
-      // decrement pointers
-      exit--;
-      start--;
-
-      if(exit  < 0) exit  = bufferCount - 1;  // wrap buffer pointer
-      if(start < 0) start = bufferCount - 1;  // wrap buffer pointer
+      // move forward in block queue
+      exit  = nextBlockIndex(exit);
+      start = nextBlockIndex(start);
    }
 }
 
@@ -526,7 +438,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    }
 
    // get leading smoothing position
-   if(endInBlock)
+   if( endInBlock )
    {
       getPos( x2, y2, z2, smoothingIndexEnd, smoothingPosEnd); // smoothing end position is in this block
    }
@@ -577,26 +489,29 @@ void SmoothMove::getPos(float & x, float & y, float & z, const int & index, cons
 
 float SmoothMove::getExtrudeLocationMM()
 {
-   static float extrudePos = 0;
    static uint32_t lastTime;
 
    uint32_t timeNow = micros();
-   float deltaTime = float(timeNow - lastTime) * (1.0f / 1000000.0f);
+   float  deltaTime = float(timeNow - lastTime) * (1.0f / 1000000.0f);
    lastTime = timeNow;
 
    if( moveBuffer[currentBlockIndex].staticExtrude ) // extrude with no head movement
    {
-      float distLeft = moveBuffer[currentBlockIndex].extrudeDist - extrudePos;
-      float margin = min(extrudePos, distLeft);
-      float velocity = min( sqrtf(2.0f * margin * extrudeAccel), extrudeMaxVel );
+      static float extrudePos = 0.0f;
+      static float velocity = 0.0f;
+
+      float decelVel = min( sqrtf( 2.0f * (moveBuffer[currentBlockIndex].extrudeDist - extrudePos) * extrudeAccel ), extrudeMaxVel );
+      velocity = min( velocity + extrudeAccel * deltaTime, decelVel );
 
       extrudePos += velocity * deltaTime;
 
       if( extrudePos > moveBuffer[currentBlockIndex].extrudeDist ) // end of extrude reached
       {
-         extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist;
          extrudePos = 0.0f;
+         velocity = 0.0f;
          moveBuffer[currentBlockIndex].staticExtrude = false;
+
+         extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist; // force final position to be exact
          return extrudeMachPos;
       }
       return extrudeMachPos + extrudePos; // middle of extrude
