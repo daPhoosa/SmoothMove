@@ -277,6 +277,8 @@ int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of t
 
 bool SmoothMove::blockQueueComplete()
 {
+   if( blockCount >  1 ) return false; // multiple blocks in queue
+
    if( blockCount == 0 ) return true;
 
    if(blockCount  == 1 &&      // on last block
