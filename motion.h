@@ -229,7 +229,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                break;
 
             case 3 : // wait for next block
-               if( blockCount > 1 )
+               if( blockCount > 1 && !moveBuffer[currentBlockIndex].staticExtrude )
                {
                   segmentIndex = 4; // only advance to next block if one exists
                   segmentTime  = 0;
