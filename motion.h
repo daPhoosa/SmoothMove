@@ -39,14 +39,7 @@ void SmoothMove::setPosX( float t_x )
 {
    if( !motionStopped ) motionStopped = true;
 
-   if(blockCount == 0)
-   {
-      X_end = t_x; // no queued blocks, so end point equals start point
-   }
-   else
-   {
-      moveBuffer[currentBlockIndex].X_start = t_x; // set start of first block to current position
-   }
+   X_end = t_x; // no queued blocks, so end point equals start point
 }
 
 
@@ -54,14 +47,7 @@ void SmoothMove::setPosY( float t_y )
 {
    if( !motionStopped ) motionStopped = true;
 
-   if(blockCount == 0)
-   {
-      Y_end = t_y; // no queued blocks, so end point equals start point
-   }
-   else
-   {
-      moveBuffer[currentBlockIndex].Y_start = t_y; // set start of first block to current position
-   }
+   Y_end = t_y; // no queued blocks, so end point equals start point
 }
 
 
@@ -69,14 +55,7 @@ void SmoothMove::setPosZ( float t_z )
 {
    if( !motionStopped ) motionStopped = true;
 
-   if(blockCount == 0)
-   {
-      Z_end = t_z; // no queued blocks, so end point equals start point
-   }
-   else
-   {
-      moveBuffer[currentBlockIndex].Z_start = t_z; // set start of first block to current position
-   }
+   Z_end = t_z; // no queued blocks, so end point equals start point
 }
 
 
@@ -91,10 +70,56 @@ void SmoothMove::setPosE( float t_e )
 
 void SmoothMove::startMoving() //
 {
+   // SetPosition(...) must be used before this is run
 
-   if(blockCount == 0)
+   blockCount = 0; // "forget" all previos blocks
+   lookAheadTime = 0;
+   segmentIndex = 0;
+   segmentTime = 0;
+
+   addRapid_Block( X_end, Y_end, Z_end ); // add dummy block at current position, zero length
+   addDelay( 100 );   // give time for more blocks to be added to buffer before starting to move
+
+   currentBlockIndex = newBlockIndex; // execute the block that was just added
+
+   moveBuffer[currentBlockIndex].accelTime = 0; // manually set these to zero since trajectory planning doesn't touch the curent block
+   moveBuffer[currentBlockIndex].velTime   = 0;
+   moveBuffer[currentBlockIndex].decelTime = 0;
+
+   motionStopped = false;
+   segmentStartTime = micros();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   /*
+
+   if(blockCount < 2)
    {
-      addLinear_Block( X_end, Y_end, Z_end, 1.0f ); // add dummy block
+      if( blockCount == 1 )
+      {
+         currentBlockIndex = nextBlockIndex(currentBlockIndex); // old block has unknown data, move to next
+         segmentIndex = 0;
+         blockCount--;
+      }
+
+      addLinear_Block( X_end, Y_end, Z_end, 1.0f ); // add dummy block at current position
       addDelay( 100 );   // give time for more blocks to be added to buffer before starting to move
    }
    else
@@ -142,18 +167,13 @@ void SmoothMove::startMoving() //
    motionStopped = false;
    segmentTime = 0;
    segmentStartTime = micros();
+
+   */
 }
 
 
-void SmoothMove::stopMoving()
+void SmoothMove::abortMotion() // all blocks in queue will be lost on restart
 {
-   motionStopped = true;
-}
-
-void SmoothMove::abortMotion() //
-{
-   blockCount = 0; // "forget" all queued blocks
-   lookAheadTime = 0;
    motionStopped = true;
 }
 
@@ -216,7 +236,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                }
                else
                {
-                  segmentTime = 2000UL; // force 2ms of dwell before checking again
+                  segmentTime = 10000UL; // force 10ms of dwell before checking again
                }
                break;
          }

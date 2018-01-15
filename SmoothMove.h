@@ -49,7 +49,6 @@
          void setPosE( float t_e );
 
          void startMoving();
-         void stopMoving();
          void abortMotion();
 
          float setMotionRateOverride(  float scale );

@@ -20,6 +20,8 @@
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
+   //if( motionStopped ) return false; // Don't accept blocks when not running
+
    if( blockCount < 3 ) return true; // try to maintain 3 block look ahead minimum
    
    if( blockCount == bufferCount - 1 ) return false; // don't exceed max buffer size
@@ -121,7 +123,7 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
       arcAngle = endAngle - moveBuffer[index].startAngle;
    }
 
-   if(arcAngle < 0.0001f)     // must be positive and matching start and stop locations indicates full circle
+   if(arcAngle < 0.0001f)     // must be positive also matching start and stop locations indicates full circle
    {
       arcAngle += 6.2831853f;
    }
