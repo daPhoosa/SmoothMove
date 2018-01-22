@@ -499,13 +499,29 @@ float SmoothMove::getExtrudeLocationMM()
    {
       static float extrudePos = 0.0f;
       static float velocity = 0.0f;
+      bool endFound = false;
 
-      float decelVel = min( sqrtf( 2.0f * (moveBuffer[currentBlockIndex].extrudeDist - extrudePos) * extrudeAccel ), extrudeMaxVel );
-      velocity = min( velocity + extrudeAccel * deltaTime, decelVel );
+      if( moveBuffer[currentBlockIndex].extrudeDist > 0.0f )
+      {
+         float decelVel = min( sqrtf( 2.0f * (moveBuffer[currentBlockIndex].extrudeDist - extrudePos) * extrudeAccel ), extrudeVel );
+         velocity = min( velocity + extrudeAccel * deltaTime, decelVel );
+         //Serial.println(velocity);
+         extrudePos += velocity * deltaTime;
+         if( extrudePos > moveBuffer[currentBlockIndex].extrudeDist ) endFound = true;
+      }
+      else  // negative extrude
+      {
+         float decelVel = min( sqrtf( 2.0f * (extrudePos - moveBuffer[currentBlockIndex].extrudeDist) * extrudeAccel ), extrudeVel );
+         //Serial.println(decelVel);
+         velocity = min( velocity + extrudeAccel * deltaTime, decelVel );
+         //Serial.println(velocity);
+         extrudePos -= velocity * deltaTime;
+         if( extrudePos < moveBuffer[currentBlockIndex].extrudeDist ) endFound = true;
+      }
 
-      extrudePos += velocity * deltaTime;
+      //Serial.println(extrudePos);
 
-      if( extrudePos > moveBuffer[currentBlockIndex].extrudeDist ) // end of extrude reached
+      if( endFound ) // end of extrude reached
       {
          extrudePos = 0.0f;
          velocity = 0.0f;

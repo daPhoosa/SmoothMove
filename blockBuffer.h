@@ -20,7 +20,7 @@
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
-   if( blockCount < 3 ) return true; // try to maintain 3 block look ahead minimum
+   if( blockCount < 10 ) return true; // try to maintain 3 block look ahead minimum
    
    if( blockCount == bufferCount - 1 ) return false; // don't exceed max buffer size
 
@@ -185,6 +185,13 @@ void SmoothMove::addDelay(int delayMS)
 }
 
 
+void SmoothMove::addExtrudeMM( float positionMM, float speed )
+{
+   extrudeVel = speed;  // mm/s
+   addExtrudeMM( positionMM );
+}
+
+
 void SmoothMove::addExtrudeMM( float positionMM )
 {
    
@@ -193,12 +200,15 @@ void SmoothMove::addExtrudeMM( float positionMM )
    computeExtrudeFactors( newBlockIndex );
 
    extrudeProgPos = positionMM;
+
+   //Serial.println( moveBuffer[newBlockIndex].extrudeDist );
+   //Serial.print(extrudeProgPos);Serial.print(" ");Serial.println(extrudeMachPos);
 }
 
 
 void SmoothMove::computeExtrudeFactors( int index )
 {
-   if( moveBuffer[index].extrudeDist > 0.001f )
+   if( abs(moveBuffer[index].extrudeDist) > 0.001f )
    {
       if( moveBuffer[index].length > 0.001f )
       {
@@ -218,12 +228,6 @@ void SmoothMove::computeExtrudeFactors( int index )
 }
 
 
-int SmoothMove::getBlockCount()
-{
-   return blockCount;
-}
-
-
 void SmoothMove::removeOldBlock()
 {
    if(blockCount > 0) // don't allow negative block counts
@@ -231,7 +235,7 @@ void SmoothMove::removeOldBlock()
       blockPosition -= moveBuffer[currentBlockIndex].length;
       moveBuffer[currentBlockIndex].targetVel = 0.0f;
 
-      if( abs(moveBuffer[currentBlockIndex].extrudeDist) > 0.0001f )
+      if( abs(moveBuffer[currentBlockIndex].extrudeDist) > 0.0001f && moveBuffer[currentBlockIndex].length > 0.0f ) // dont double count extrude for static extrudes
       {
          extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist;
       }
@@ -282,13 +286,19 @@ bool SmoothMove::blockQueueComplete()
    if( blockCount == 0 ) return true;
 
    if(blockCount  == 1 &&      // on last block
-      segmentIndex > 2 &&      // movement complete
+      segmentIndex > 2 &&      // movement & dwell complete
       !moveBuffer[currentBlockIndex].staticExtrude) // extrude complete
    {
       return true;
    }
 
    return false; // otherwise still executing block queue 
+}
+
+
+int SmoothMove::getBlockCount()
+{
+   return blockCount;
 }
 
 

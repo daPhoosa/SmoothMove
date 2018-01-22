@@ -40,8 +40,9 @@
          void addArc_Block( int type, float _x, float _y, float _feed, float centerX, float centerY );
          void addDwell_Block( int delayMS );
          void addExtrudeMM( float positionMM );
+         void addExtrudeMM( float positionMM, float speed );
 
-         void setPosition( float _x, float _y, float _z );
+         void setPosition( float t_x, float t_y, float t_z );
          void setPosition( float t_x, float t_y, float t_z, float t_e );
          void setPosX( float t_x );
          void setPosY( float t_y );
@@ -139,7 +140,7 @@
          float motionFeedOverride, extrudeRateOverride;
 
          float extrudeProgPos, extrudeMachPos;
-         float extrudeMaxVel, extrudeAccel, extrudeAccelInv;
+         float extrudeVel, extrudeAccel, extrudeAccelInv;
 
          float blockPosition, velocityNow;
 
