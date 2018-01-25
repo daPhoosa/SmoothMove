@@ -49,6 +49,8 @@
          void setPosZ( float t_z );
          void setPosE( float t_e );
 
+         void setExrudeAccel( float accel );
+
          void startMoving();
          void abortMotion();
 
@@ -140,7 +142,7 @@
          float motionFeedOverride, extrudeRateOverride;
 
          float extrudeProgPos, extrudeMachPos;
-         float extrudeVel, extrudeAccel, extrudeAccelInv;
+         float extrudeVel, extrudeAccel;
 
          float blockPosition, velocityNow;
 

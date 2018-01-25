@@ -552,6 +552,12 @@ float SmoothMove::setExtrudeRateOverride( float scale )
    return extrudeRateOverride;
 }
 
+
+void SmoothMove::setExrudeAccel( float accel )
+{
+   extrudeAccel = accel; // [mm/s^2]
+}
+
 float SmoothMove::getSpeed()
 {
    return velocityNow;
