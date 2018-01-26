@@ -43,6 +43,8 @@ SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
    extrudeProgPos = 0.0f;
    extrudeAccel   = 1000.0f; // [mm/s^2]
 
+   lookAheadTimeMin = 2 * uint32_t(1000000.0f * (maxVel / maxAccel));  // double the time required to decelerate from max vel to zero
+
    pathSmoothingOff = false;
 
    motionStopped = true;

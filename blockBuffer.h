@@ -20,12 +20,11 @@
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
-   if( blockCount < 10 ) return true; // try to maintain 3 block look ahead minimum
+   if( blockCount < 4 ) return true; // try to maintain 4 block look ahead minimum
    
    if( blockCount == bufferCount - 1 ) return false; // don't exceed max buffer size
 
-   //uint32_t lookAheadTimeMin = uint32_t(( velocityNow * accelInverse + 0.050f ) * 1000000.0f ); // time to decel to zero plus 50ms in [us]
-   if( lookAheadTime < 250000UL ) return true; // try to insure adequate blocks to prevent velocity throttling
+   if( lookAheadTime < lookAheadTimeMin ) return true; // try to insure adequate blocks to prevent velocity throttling
 
    return false;
 }
@@ -276,6 +275,12 @@ int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of t
       return currentIndex + 1;
 
    return 0;
+}
+
+
+void SmoothMove::setLookAheadTime(int timeMS )
+{
+   lookAheadTimeMin = max( 5, timeMS ) * 1000UL; // time in microseconds
 }
 
 

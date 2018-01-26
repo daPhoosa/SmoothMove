@@ -50,6 +50,7 @@
          void setPosE( float t_e );
 
          void setExrudeAccel( float accel );
+         void setLookAheadTime(int timeMS );
 
          void startMoving();
          void abortMotion();
@@ -157,7 +158,7 @@
 
          bool motionStopped;
 
-         uint32_t lookAheadTime;
+         uint32_t lookAheadTime, lookAheadTimeMin;
 
          uint32_t segmentStartTime, segmentTime;
 
