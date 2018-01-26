@@ -24,8 +24,8 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
    
    if( blockCount == bufferCount - 1 ) return false; // don't exceed max buffer size
 
-   uint32_t lookAheadTimeMin = uint32_t(( velocityNow * accelInverse + 0.050f ) * 1000000.0f ); // time to decel to zero plus 50ms in [us]
-   if( lookAheadTime < lookAheadTimeMin ) return true; // try to insure adequate blocks to prevent velocity throttling
+   //uint32_t lookAheadTimeMin = uint32_t(( velocityNow * accelInverse + 0.050f ) * 1000000.0f ); // time to decel to zero plus 50ms in [us]
+   if( lookAheadTime < 250000UL ) return true; // try to insure adequate blocks to prevent velocity throttling
 
    return false;
 }
