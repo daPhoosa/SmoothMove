@@ -256,8 +256,10 @@ void SmoothMove::constAccelTrajectory()
    xVel[exit]    = 0.0f;   // newest block always ends at zero
    xVel_Sq[exit] = 0.0f;
 
-   for( int i = blockCount - 1; i > 0 ; i-- )
+   for( int i = blockCount - 2; i > 0 ; i-- )
    {
+      //Serial.print( exit );Serial.print(" ");
+
       // iterate through the active blocks backwards (newest to oldest)
       //    On the first pass, only border velocities are changed
       //    These can only be made slower, never faster
@@ -286,10 +288,15 @@ void SmoothMove::constAccelTrajectory()
       start = previousBlockIndex(start);
    }
 
-   lookAheadTime = 0; // zero before re-summing total
+   //Serial.print(">");Serial.print( currentBlockIndex );Serial.print("< ");
 
-   for( int i = blockCount; i > 0 ; i-- )
+   lookAheadTime = 0; // zero before re-summing total
+   if( segmentIndex < 1 ) lookAheadTime += moveBuffer[currentBlockIndex].velTime;    // include const vel time
+   if( segmentIndex < 2 ) lookAheadTime += moveBuffer[currentBlockIndex].decelTime;  // include decel time
+
+   for( int i = blockCount - 1; i > 0 ; i-- )
    {
+      //Serial.print( exit );Serial.print(" ");
       // iterate forward
       //    check and set boundary velocities
       //    set position and time variables
@@ -363,6 +370,9 @@ void SmoothMove::constAccelTrajectory()
       exit  = nextBlockIndex(exit);
       start = nextBlockIndex(start);
    }
+
+   //Serial.print(">");Serial.println( newBlockIndex );
+   
 }
 
 

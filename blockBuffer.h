@@ -22,7 +22,7 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 {
    if( blockCount < 4 ) return true; // try to maintain 4 block look ahead minimum
    
-   if( blockCount == bufferCount - 1 ) return false; // don't exceed max buffer size
+   if( blockCount >= bufferCount - 2 ) return false; // don't exceed max buffer size
 
    if( lookAheadTime < lookAheadTimeMin ) return true; // try to insure adequate blocks to prevent velocity throttling
 
