@@ -21,6 +21,7 @@
 #include "SmoothMove.h"
 #include "motion.h"
 #include "blockBuffer.h"
+#include "control.h"
 
 
 SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )

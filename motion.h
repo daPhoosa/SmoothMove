@@ -18,56 +18,6 @@
 */
 
 
-void SmoothMove::setPosition( float t_x, float t_y, float t_z )
-{
-   setPosX( t_x );
-   setPosY( t_y );
-   setPosZ( t_z );   
-}
-
-
-void SmoothMove::setPosition( float t_x, float t_y, float t_z, float t_e )
-{
-   setPosX( t_x );
-   setPosY( t_y );
-   setPosZ( t_z );   
-   setPosE( t_e ); 
-}
-
-
-void SmoothMove::setPosX( float t_x )
-{
-   if( !motionStopped ) motionStopped = true;
-
-   X_end = t_x; // no queued blocks, so end point equals start point
-}
-
-
-void SmoothMove::setPosY( float t_y )
-{
-   if( !motionStopped ) motionStopped = true;
-
-   Y_end = t_y; // no queued blocks, so end point equals start point
-}
-
-
-void SmoothMove::setPosZ( float t_z )
-{
-   if( !motionStopped ) motionStopped = true;
-
-   Z_end = t_z; // no queued blocks, so end point equals start point
-}
-
-
-void SmoothMove::setPosE( float t_e )
-{
-   if( !motionStopped ) motionStopped = true;
-
-   extrudeProgPos = t_e;
-   extrudeMachPos = t_e;
-}
-
-
 void SmoothMove::startMoving() //
 {
    // SetPosition(...) must be used before this is run
