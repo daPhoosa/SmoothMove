@@ -30,7 +30,7 @@
    class SmoothMove
    {
       public:
-         SmoothMove(float _accel, float _velMax, float _cornerRounding);
+         SmoothMove();
          ~SmoothMove();
 
          bool bufferVacancy();
@@ -51,6 +51,9 @@
 
          void setExrudeAccel( float accel );
          void setLookAheadTime(int timeMS );
+         void setParamXY( float accel, float maxVel );
+         void setParamZ( float accel, float maxVel );
+         void setCornerRounding( float _cornerRounding );
 
          void startMoving();
          void abortMotion();
@@ -123,6 +126,8 @@
             float X_start,  Y_start,  Z_start;
             float X_vector, Y_vector, Z_vector;
 
+            float maxAccel, accelInverse, accelInverseHalf, accelDouble;
+
             float targetVel, targetVel_Sq, peakVel, maxStartVel;
 
             float accelEndPoint, velEndPoint, decelLength; // length of each segement
@@ -153,8 +158,11 @@
 
          float cornerRoundDist, cornerRoundDistSq, cornerRoundDistHalf;
 
-         float maxAccel, accelInverse, accelInverseHalf, accelDouble;
-         float maxVel;
+         float maxAccel_XY, accelInverse_XY, accelInverseHalf_XY, accelDouble_XY;
+         float maxVel_XY;
+
+         float maxAccel_Z, accelInverse_Z, accelInverseHalf_Z, accelDouble_Z;
+         float maxVel_Z;
 
          bool motionStopped;
 
@@ -185,6 +193,9 @@
          void setMaxStartVel( const int & index );
          void getPos( float & x, float & y, float & z, const int & index, const float & position );
          void computeExtrudeFactors( int index );
+
+         void setBlockAccel( int index );
+         void setBlockFeed( int index );
 
          void displayBlock( int i );
 

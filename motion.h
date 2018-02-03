@@ -17,6 +17,8 @@
          along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
+#include "SmoothMove.h"
+
 
 void SmoothMove::startMoving() //
 {
@@ -120,8 +122,8 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
             dt = float(deltaTime) * 0.000001f;
             dt_Sq = dt * dt;
             start = previousBlockIndex(currentBlockIndex);
-            blockPosition = 0.5f * maxAccel * dt_Sq + xVel[start] * dt;
-            velocityNow = maxAccel * dt + xVel[start];
+            blockPosition = 0.5f * moveBuffer[currentBlockIndex].maxAccel * dt_Sq + xVel[start] * dt;
+            velocityNow = moveBuffer[currentBlockIndex].maxAccel * dt + xVel[start];
             break;
 
          case 1 : // state: Const Vel
@@ -133,8 +135,8 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
          case 2 : // state: Decel
             dt = float(deltaTime) * 0.000001f;
             dt_Sq = dt * dt;
-            blockPosition = -0.5f * maxAccel * dt_Sq + moveBuffer[currentBlockIndex].peakVel * dt + moveBuffer[currentBlockIndex].velEndPoint;
-            velocityNow = -maxAccel * dt + moveBuffer[currentBlockIndex].peakVel;
+            blockPosition = -0.5f * moveBuffer[currentBlockIndex].maxAccel * dt_Sq + moveBuffer[currentBlockIndex].peakVel * dt + moveBuffer[currentBlockIndex].velEndPoint;
+            velocityNow = -moveBuffer[currentBlockIndex].maxAccel * dt + moveBuffer[currentBlockIndex].peakVel;
             break;
 
          case 3 : // state: Dwell
@@ -167,6 +169,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
       float x2, y2, z2;
       getPos( x1, y1, z1, index, cornerRoundDist );
       getPos( x2, y2, z2, prevBlock, prevBlockDist );
+      float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate 
 
       x1 -= x2; // difference in positions
       y1 -= y2;
@@ -208,7 +211,6 @@ void SmoothMove::constAccelTrajectory()
 
    for( int i = blockCount - 2; i > 0 ; i-- )
    {
-      //Serial.print( exit );Serial.print(" ");
 
       // iterate through the active blocks backwards (newest to oldest)
       //    On the first pass, only border velocities are changed
@@ -218,18 +220,18 @@ void SmoothMove::constAccelTrajectory()
       xVel[start] = moveBuffer[exit].maxStartVel;
       xVel_Sq[start] = xVel[start] * xVel[start];
 
-      float distToDeltaVel = (xVel_Sq[start] - xVel_Sq[exit]) * accelInverseHalf;
+      float distToDeltaVel = (xVel_Sq[start] - xVel_Sq[exit]) * moveBuffer[exit].accelInverseHalf;
 
       if(distToDeltaVel > moveBuffer[exit].length)
       {
          // not enough room to decel from startVel to endVel
-         xVel_Sq[start] = xVel_Sq[exit] + accelDouble * moveBuffer[exit].length; // set startVel lower
+         xVel_Sq[start] = xVel_Sq[exit] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set startVel lower
          xVel[start]    = sqrtf(xVel_Sq[start]);
       }
       else if(distToDeltaVel < -moveBuffer[exit].length)
       {
          // not enough room to accel from startVel to endVel
-         xVel_Sq[exit] = xVel_Sq[start] + accelDouble * moveBuffer[exit].length; // set exitVel lower
+         xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set exitVel lower
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
       }
 
@@ -237,8 +239,6 @@ void SmoothMove::constAccelTrajectory()
       exit  = previousBlockIndex(exit);
       start = previousBlockIndex(start);
    }
-
-   //Serial.print(">");Serial.print( currentBlockIndex );Serial.print("< ");
 
    lookAheadTime = 0; // zero before re-summing total
    if( segmentIndex < 1 ) lookAheadTime += moveBuffer[currentBlockIndex].velTime;    // include const vel time
@@ -253,18 +253,18 @@ void SmoothMove::constAccelTrajectory()
 
       int index = exit;  // for reading clarity, index points to current block
 
-      float distToDeltaVel = (xVel_Sq[exit] - xVel_Sq[start]) * accelInverseHalf;
+      float distToDeltaVel = (xVel_Sq[exit] - xVel_Sq[start]) * moveBuffer[index].accelInverseHalf;
 
       if(distToDeltaVel > moveBuffer[index].length)
       {
          // not enough room to accel from startVel to endVel
 
-         xVel_Sq[exit] = xVel_Sq[start] + accelDouble * moveBuffer[index].length; // set exitVel lower
+         xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[index].accelDouble * moveBuffer[index].length; // set exitVel lower
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
 
          moveBuffer[index].peakVel = xVel[start];  // shouldn't need this...
 
-         moveBuffer[index].accelTime     = uint32_t(( xVel[exit] - xVel[start] ) * accelInverse * 1000000.0f);
+         moveBuffer[index].accelTime     = uint32_t(( xVel[exit] - xVel[start] ) * moveBuffer[index].accelInverse * 1000000.0f);
          moveBuffer[index].accelEndPoint = moveBuffer[index].length;
 
          moveBuffer[index].velTime       = 0;
@@ -277,9 +277,9 @@ void SmoothMove::constAccelTrajectory()
       {
          // Compute accel and decel
 
-         moveBuffer[index].decelLength   = ( moveBuffer[index].targetVel_Sq - xVel_Sq[exit]  ) * accelInverseHalf;
+         moveBuffer[index].decelLength   = ( moveBuffer[index].targetVel_Sq - xVel_Sq[exit]  ) * moveBuffer[index].accelInverseHalf;
 
-         moveBuffer[index].accelEndPoint = ( moveBuffer[index].targetVel_Sq - xVel_Sq[start] ) * accelInverseHalf;
+         moveBuffer[index].accelEndPoint = ( moveBuffer[index].targetVel_Sq - xVel_Sq[start] ) * moveBuffer[index].accelInverseHalf;
 
          float constVelLength = moveBuffer[index].length - moveBuffer[index].decelLength - moveBuffer[index].accelEndPoint;
 
@@ -292,9 +292,9 @@ void SmoothMove::constAccelTrajectory()
 
             moveBuffer[index].velEndPoint = constVelLength + moveBuffer[index].accelEndPoint;
 
-            moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].targetVel - xVel[start] ) * accelInverse * 1000000.0f);
+            moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].targetVel - xVel[start] ) * moveBuffer[index].accelInverse * 1000000.0f);
             moveBuffer[index].velTime   = uint32_t(( moveBuffer[index].velEndPoint - moveBuffer[index].accelEndPoint) / moveBuffer[index].targetVel * 1000000.0f);
-            moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].targetVel - xVel[exit]  ) * accelInverse * 1000000.0f);
+            moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].targetVel - xVel[exit]  ) * moveBuffer[index].accelInverse * 1000000.0f);
          }
          else
          {
@@ -306,11 +306,11 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[index].velEndPoint    = moveBuffer[index].accelEndPoint; // zero length
             moveBuffer[index].decelLength   += halfExcessLength;
 
-            moveBuffer[index].peakVel   = sqrtf( xVel_Sq[start] + accelDouble * moveBuffer[index].accelEndPoint );
+            moveBuffer[index].peakVel   = sqrtf( xVel_Sq[start] + moveBuffer[index].accelDouble * moveBuffer[index].accelEndPoint );
 
-            moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].peakVel - xVel[start]) * accelInverse * 1000000.0f);
+            moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].peakVel - xVel[start]) * moveBuffer[index].accelInverse * 1000000.0f);
             moveBuffer[index].velTime   = 0;
-            moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].peakVel - xVel[exit] ) * accelInverse * 1000000.0f);
+            moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].peakVel - xVel[exit] ) * moveBuffer[index].accelInverse * 1000000.0f);
          }
       }
 
@@ -320,9 +320,6 @@ void SmoothMove::constAccelTrajectory()
       exit  = nextBlockIndex(exit);
       start = nextBlockIndex(start);
    }
-
-   //Serial.print(">");Serial.println( newBlockIndex );
-   
 }
 
 
@@ -356,7 +353,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    if( pathSmoothingOff ) return; // smoothing turned off
 
    // symetric smoothing
-   float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * accelInverseHalf );
+   float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf );
 
    if( smoothingRadius < 0.003f ) return; // return current position without smoothing if velocity is very low
 
@@ -504,39 +501,4 @@ float SmoothMove::getExtrudeLocationMM()
    {
       return moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
    }
-}
-
-
-float SmoothMove::setMotionRateOverride(  float scale )
-{
-   motionFeedOverride = constrain( scale, 0.1f, 2.0f );
-   return motionFeedOverride;
-}
-
-
-float SmoothMove::setExtrudeRateOverride( float scale )
-{
-   extrudeRateOverride = constrain( scale, 0.1f, 2.0f );
-   return extrudeRateOverride;
-}
-
-
-void SmoothMove::setExrudeAccel( float accel )
-{
-   extrudeAccel = accel; // [mm/s^2]
-}
-
-float SmoothMove::getSpeed()
-{
-   return velocityNow;
-}
-
-void SmoothMove::junctionSmoothingOff()
-{
-   pathSmoothingOff = true;
-}
-
-void SmoothMove::junctionSmoothingOn()
-{
-   pathSmoothingOff = false;
 }

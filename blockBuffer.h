@@ -17,6 +17,8 @@
          along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
+#include "SmoothMove.h"
+
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
@@ -34,7 +36,7 @@ void SmoothMove::addDwell_Block( int delayMS )  // add block with no movement to
 {
    if( blockCount < bufferCount - 1 )
    {
-      addLinear_Block( X_end, Y_end, Z_end, maxVel );
+      addLinear_Block( X_end, Y_end, Z_end, maxVel_XY );
    }
    addDelay( delayMS );
 }
@@ -42,17 +44,17 @@ void SmoothMove::addDwell_Block( int delayMS )  // add block with no movement to
 
 void SmoothMove::addRapid_Block( float _x, float _y, float _z )
 {
-   addLinear_Block( _x, _y, _z, maxVel );
+   addLinear_Block( _x, _y, _z, maxVel_XY );
 }
 
 
-void SmoothMove::addLinear_Block( float _x, float _y, float _z, float _feed )
+void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
 {
    int index = addBaseBlock( _x, _y, _z );
 
    moveBuffer[index].moveType = Linear;  // feed move G0/G1
 
-   moveBuffer[index].targetVel = constrain( _feed * motionFeedOverride, 0.01f, maxVel );  // constrain to reasonable limits
+   moveBuffer[index].targetVel = constrain( feed * motionFeedOverride, 0.01f, maxVel_XY );  // constrain to reasonable limits
 
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
 
@@ -67,6 +69,9 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float _feed )
       moveBuffer[index].X_vector = dx * inverseLength;  // line unit vector
       moveBuffer[index].Y_vector = dy * inverseLength;
       moveBuffer[index].Z_vector = dz * inverseLength;
+
+      setBlockAccel( index );
+      setBlockFeed(  index );
    }
    else
    {
@@ -78,6 +83,55 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float _feed )
    setMaxStartVel(index);  // set cornering/start speed
 
    constAccelTrajectory();
+
+}
+
+
+void SmoothMove::setBlockAccel( int index )
+{
+   if( abs(moveBuffer[index].Z_vector * moveBuffer[index].maxAccel) > maxAccel_Z )  // Don't exceed max Z accel
+   {
+      if( abs(moveBuffer[index].Z_vector) > 0.99f )  // Z only move
+      {
+         moveBuffer[index].maxAccel         = maxAccel_Z;    // 
+         moveBuffer[index].accelInverse     = accelInverse_Z;
+         moveBuffer[index].accelInverseHalf = accelInverseHalf_Z;
+         moveBuffer[index].accelDouble      = accelDouble_Z;
+      }
+      else  // oblique move
+      {
+         float inverseZ = abs(1.0f / moveBuffer[index].Z_vector);
+
+         float aX = moveBuffer[index].X_vector * inverseZ * maxAccel_Z;  // accel in X direction
+         float aY = moveBuffer[index].Y_vector * inverseZ * maxAccel_Z;  // accel in Y direction
+         float aZ = maxAccel_Z;  // accel in Z direction
+
+         float accel = sqrtf( aX * aX + aY * aY + aZ * aZ );
+
+         moveBuffer[index].maxAccel         = accel;
+         moveBuffer[index].accelInverse     = 1.0f / accel;
+         moveBuffer[index].accelInverseHalf = 0.5f * moveBuffer[index].accelInverse;
+         moveBuffer[index].accelDouble      = 2.0f * accel;
+      }
+   }
+}
+
+
+void SmoothMove::setBlockFeed( int index )
+{
+   float velZ = maxVel_Z * motionFeedOverride;
+
+   if( abs(moveBuffer[index].Z_vector * moveBuffer[index].targetVel) > velZ )
+   {
+      float inverseZ = abs(1.0f / moveBuffer[index].Z_vector);
+
+      float vX = moveBuffer[index].X_vector * inverseZ * velZ;  // Vel in X direction
+      float vY = moveBuffer[index].Y_vector * inverseZ * velZ;  // Vel in Y direction
+      float vZ = velZ;  // Vel in Z direction
+
+      moveBuffer[index].targetVel_Sq = vX * vX + vY * vY + vZ * vZ;
+      moveBuffer[index].targetVel = sqrtf(moveBuffer[index].targetVel_Sq);
+   }
 }
 
 
@@ -140,8 +194,8 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    moveBuffer[index].Y_vector = centerY;
    moveBuffer[index].Z_vector = 0.0f;
 
-   _feed = constrain( _feed * motionFeedOverride, 0.01f, sqrtf(maxAccel * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
-   moveBuffer[index].targetVel    = min( _feed, maxVel );
+   _feed = constrain( _feed * motionFeedOverride, 0.01f, sqrtf(maxAccel_XY * moveBuffer[index].radius) );  // limit feed rate to prevent excessive radial acceleration
+   moveBuffer[index].targetVel    = min( _feed, maxVel_XY );
    moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
 
    setMaxStartVel(index);  // set cornering/start speed
@@ -166,6 +220,11 @@ int SmoothMove::addBaseBlock( const float & _x, const float & _y, const float & 
    moveBuffer[index].dwell = 0;  // assume continuous motion
    moveBuffer[index].extrudeDist = 0.0f; // assume no extrude
    moveBuffer[index].extrudeScaleFactor = 0.0f;
+
+   moveBuffer[index].maxAccel = maxAccel_XY;    // assume move is in XY plane, check later
+   moveBuffer[index].accelInverse = accelInverse_XY;
+   moveBuffer[index].accelInverseHalf = accelInverseHalf_XY;
+   moveBuffer[index].accelDouble = accelDouble_XY;
 
    return index;
 }
@@ -278,12 +337,6 @@ int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of t
 }
 
 
-void SmoothMove::setLookAheadTime(int timeMS )
-{
-   lookAheadTimeMin = max( 5, timeMS ) * 1000UL; // time in microseconds
-}
-
-
 bool SmoothMove::blockQueueComplete()
 {
    if( blockCount >  1 ) return false; // multiple blocks in queue
@@ -298,12 +351,6 @@ bool SmoothMove::blockQueueComplete()
    }
 
    return false; // otherwise still executing block queue 
-}
-
-
-int SmoothMove::getBlockCount()
-{
-   return blockCount;
 }
 
 

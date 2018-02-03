@@ -18,6 +18,9 @@
 
 */
 
+#include "SmoothMove.h"
+
+
 void SmoothMove::setPosition( float t_x, float t_y, float t_z )
 {
    setPosX( t_x );
@@ -65,4 +68,81 @@ void SmoothMove::setPosE( float t_e )
 
    extrudeProgPos = t_e;
    extrudeMachPos = t_e;
+}
+
+
+float SmoothMove::setMotionRateOverride(  float scale )
+{
+   motionFeedOverride = constrain( scale, 0.1f, 2.0f );
+   return motionFeedOverride;
+}
+
+
+float SmoothMove::setExtrudeRateOverride( float scale )
+{
+   extrudeRateOverride = constrain( scale, 0.1f, 2.0f );
+   return extrudeRateOverride;
+}
+
+
+void SmoothMove::setExrudeAccel( float accel )
+{
+   extrudeAccel = accel; // [mm/s^2]
+}
+
+float SmoothMove::getSpeed()
+{
+   return velocityNow;
+}
+
+void SmoothMove::junctionSmoothingOff()
+{
+   pathSmoothingOff = true;
+}
+
+void SmoothMove::junctionSmoothingOn()
+{
+   pathSmoothingOff = false;
+}
+
+
+void SmoothMove::setLookAheadTime(int timeMS )
+{
+   lookAheadTimeMin = max( 5, timeMS ) * 1000UL; // time in microseconds
+}
+
+
+int SmoothMove::getBlockCount()
+{
+   return blockCount;
+}
+
+
+void SmoothMove::setParamXY( float accel, float maxVel )
+{
+   maxAccel_XY         = accel;
+   accelInverse_XY     = 1.0f / accel;
+   accelInverseHalf_XY = 0.5f * accelInverse_XY;
+   accelDouble_XY      = 2.0f * accel;
+
+   maxVel_XY = maxVel;
+}
+
+
+void SmoothMove::setParamZ( float accel, float maxVel )
+{
+   maxAccel_Z         = accel;
+   accelInverse_Z     = 1.0f / accel;
+   accelInverseHalf_Z = 0.5f * accelInverse_Z;
+   accelDouble_Z      = 2.0f * accel;
+
+   maxVel_Z = maxVel;
+}
+
+
+void SmoothMove::setCornerRounding( float _cornerRounding )
+{
+   cornerRoundDist     = max( _cornerRounding, 0.001f );
+   cornerRoundDistSq   = cornerRoundDist * cornerRoundDist;
+   cornerRoundDistHalf = cornerRoundDist * 0.5f;
 }

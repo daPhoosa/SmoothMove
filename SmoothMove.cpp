@@ -24,19 +24,8 @@
 #include "control.h"
 
 
-SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
+SmoothMove::SmoothMove()
 {
-
-   maxAccel     = _accel;
-   accelInverse = 1.0f / _accel;
-   accelInverseHalf = 0.5f * accelInverse;
-   accelDouble  = 2.0f * _accel;
-
-   maxVel       = abs( _velMax );
-
-   cornerRoundDist     = max( _cornerRounding, 0.001f );
-   cornerRoundDistSq   = cornerRoundDist * cornerRoundDist;
-   cornerRoundDistHalf = cornerRoundDist * 0.5f;
 
    motionFeedOverride  = 1.0f;
    extrudeRateOverride = 1.0f;
@@ -44,7 +33,7 @@ SmoothMove::SmoothMove( float _accel, float _velMax, float _cornerRounding )
    extrudeProgPos = 0.0f;
    extrudeAccel   = 1000.0f; // [mm/s^2]
 
-   lookAheadTimeMin = 2 * uint32_t(1000000.0f * (maxVel / maxAccel));  // double the time required to decelerate from max vel to zero
+   lookAheadTimeMin = 250000;  // [us]
 
    pathSmoothingOff = false;
 
