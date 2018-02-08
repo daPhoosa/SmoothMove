@@ -413,9 +413,17 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       getPos( x2, y2, z2, smoothingIndexEnd, position); // smoothing end position is in the next block
    }
 
+   /*
    x = ( x + x1 + x2 ) * 0.333333f; // average the three smoothing points
    y = ( y + y1 + y2 ) * 0.333333f;
    z = ( z + z1 + z2 ) * 0.333333f;
+   */
+
+   x = ( x1 + x2 ) * 0.5f; // average two smoothing points
+   y = ( y1 + y2 ) * 0.5f;
+   z = ( z1 + z2 ) * 0.5f;
+
+
    // three point smoothing creates a pseudo arc
    // two point smoothing creates a straight "chamfer"
 }
