@@ -116,7 +116,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 21;
+         const static int bufferCount = 32;
 
          struct block_t
          {
