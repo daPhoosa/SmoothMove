@@ -153,44 +153,46 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 {
    int prevBlock = previousBlockIndex(index);
 
-   if(blockCount > 1 && !moveBuffer[prevBlock].dwell)
+   if( blockCount > 1 && !moveBuffer[prevBlock].dwell )
    {
-      float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
-      int thisBlockCount = blockCount;
 
-      while( prevBlockDist < 0.0f && thisBlockCount > 1 && !moveBuffer[prevBlock].dwell ) // iterate through short segments
+      if( moveBuffer[prevBlock].length < 0.001f || moveBuffer[index].length < 0.001f )
       {
-         thisBlockCount--;
-         prevBlock = previousBlockIndex( prevBlock );
-         prevBlockDist = moveBuffer[prevBlock].length + prevBlockDist;
-      }
-
-      float x1, y1, z1;
-      float x2, y2, z2;
-      getPos( x1, y1, z1, index, cornerRoundDist );
-      getPos( x2, y2, z2, prevBlock, prevBlockDist );
-      float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate 
-
-      x1 -= x2; // difference in positions
-      y1 -= y2;
-      z1 -= z2;
-      float pointDistSq = x1 * x1 + y1 * y1 + z1 * z1;
-
-      float radius = sqrtf( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
-
-      float junctionVelSq = maxAccel * radius;
-
-      float minBlockVel = min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel );
-
-      if( junctionVelSq < minBlockVel * minBlockVel )
-      {
-         moveBuffer[index].maxStartVel = sqrtf(junctionVelSq);
-         moveBuffer[index].fastJunction = false;
+         moveBuffer[index].maxStartVel = 0.0f;  // if either block has zero length, force slow feed
+         moveBuffer[index].fastJunction = true;
       }
       else
       {
-         moveBuffer[index].maxStartVel = minBlockVel;
-         moveBuffer[index].fastJunction = true;
+         // both lines have reasonable length
+         float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
+
+         float x1, y1, z1;
+         float x2, y2, z2;
+         getPos( x1, y1, z1, index, cornerRoundDist );
+         getPos( x2, y2, z2, prevBlock, prevBlockDist );
+         float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate 
+
+         x1 -= x2; // difference in positions
+         y1 -= y2;
+         z1 -= z2;
+         float pointDistSq = x1 * x1 + y1 * y1 + z1 * z1;
+
+         float radius = sqrtf( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
+
+         float junctionVelSq = maxAccel * radius;
+
+         float minBlockVel = min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel );
+
+         if( junctionVelSq < minBlockVel * minBlockVel )
+         {
+            moveBuffer[index].maxStartVel = sqrtf(junctionVelSq);
+            moveBuffer[index].fastJunction = false;
+         }
+         else
+         {
+            moveBuffer[index].maxStartVel = minBlockVel;
+            moveBuffer[index].fastJunction = true;
+         }
       }
    }
    else
