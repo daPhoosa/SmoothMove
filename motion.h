@@ -51,7 +51,6 @@ void SmoothMove::abortMotion() // all blocks in queue will be lost on restart
 
 void SmoothMove::advancePostion() // this moves forward along the acc/dec trajectory
 {
-   uint32_t timeNow;
 
    if( blockCount == 0 || motionStopped )
    {
@@ -60,17 +59,15 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
       segmentStartTime = micros();
    }
    else
-   {
-      timeNow = micros();
-      uint32_t deltaTime = timeNow - segmentStartTime;
+   { 
+      uint32_t deltaTime = micros() - segmentStartTime;
 
       //  check if the next segment has been entered  -- while loop is used to cross multiple zero length segments
       while( deltaTime > segmentTime )
       {
 
-         timeNow = micros();
          segmentStartTime += segmentTime; // advance start time by previous segment time
-         deltaTime = timeNow - segmentStartTime;
+         deltaTime -= segmentTime;
 
          switch( segmentIndex )
          {
