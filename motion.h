@@ -152,44 +152,34 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
    if( blockCount > 1 && !moveBuffer[prevBlock].dwell )
    {
+      float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
 
-      if( moveBuffer[prevBlock].length < 0.001f || moveBuffer[index].length < 0.001f )
+      float x1, y1, z1;
+      float x2, y2, z2;
+      getPos( x1, y1, z1, index, cornerRoundDist );
+      getPos( x2, y2, z2, prevBlock, prevBlockDist );
+      float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate 
+
+      x1 -= x2; // difference in positions
+      y1 -= y2;
+      z1 -= z2;
+      float pointDistSq = x1 * x1 + y1 * y1 + z1 * z1;
+
+      float radius = sqrtf( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
+
+      float junctionVelSq = maxAccel * radius;
+
+      float minBlockVel = min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel );
+
+      if( junctionVelSq < minBlockVel * minBlockVel )
       {
-         moveBuffer[index].maxStartVel = 0.0f;  // if either block has zero length, force slow feed
-         moveBuffer[index].fastJunction = true;
+         moveBuffer[index].maxStartVel = sqrtf(junctionVelSq);
+         moveBuffer[index].fastJunction = false;
       }
       else
       {
-         // both lines have reasonable length
-         float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
-
-         float x1, y1, z1;
-         float x2, y2, z2;
-         getPos( x1, y1, z1, index, cornerRoundDist );
-         getPos( x2, y2, z2, prevBlock, prevBlockDist );
-         float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate 
-
-         x1 -= x2; // difference in positions
-         y1 -= y2;
-         z1 -= z2;
-         float pointDistSq = x1 * x1 + y1 * y1 + z1 * z1;
-
-         float radius = sqrtf( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
-
-         float junctionVelSq = maxAccel * radius;
-
-         float minBlockVel = min( moveBuffer[index].targetVel, moveBuffer[prevBlock].targetVel );
-
-         if( junctionVelSq < minBlockVel * minBlockVel )
-         {
-            moveBuffer[index].maxStartVel = sqrtf(junctionVelSq);
-            moveBuffer[index].fastJunction = false;
-         }
-         else
-         {
-            moveBuffer[index].maxStartVel = minBlockVel;
-            moveBuffer[index].fastJunction = true;
-         }
+         moveBuffer[index].maxStartVel = minBlockVel;
+         moveBuffer[index].fastJunction = true;
       }
    }
    else
@@ -347,9 +337,11 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       return;
    }
 
-   getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
-
-   if( pathSmoothingOff ) return; // smoothing turned off
+   if( pathSmoothingOff )  // smoothing turned off
+   {
+      getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
+      return; 
+   } 
 
    // symetric smoothing
    float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf );
@@ -384,8 +376,12 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       smoothingIndexEnd = nextBlockIndex(currentBlockIndex);
    }
 
-   if( startInBlock && endInBlock ) return; // do not smooth if "far" from junction (both points lie in the current block)
-   if( moveBuffer[smoothingIndexEnd].fastJunction ) return; // do not smooth if junction does not force deceleration
+   if( ( startInBlock && endInBlock ) ||                 // do not smooth if "far" from junction (both points lie in the current block)
+         moveBuffer[smoothingIndexEnd].fastJunction )    // do not smooth if junction does not force deceleration
+   {
+      getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
+      return;
+   }  
 
    float x1, y1, z1;
    float x2, y2, z2;
@@ -412,18 +408,10 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       getPos( x2, y2, z2, smoothingIndexEnd, position); // smoothing end position is in the next block
    }
 
-   /*
-   x = ( x + x1 + x2 ) * 0.333333f; // average the three smoothing points
-   y = ( y + y1 + y2 ) * 0.333333f;
-   z = ( z + z1 + z2 ) * 0.333333f;
-   */
-
    x = ( x1 + x2 ) * 0.5f; // average two smoothing points
    y = ( y1 + y2 ) * 0.5f;
    z = ( z1 + z2 ) * 0.5f;
 
-
-   // three point smoothing creates a pseudo arc
    // two point smoothing creates a straight "chamfer"
 }
 
