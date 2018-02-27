@@ -56,8 +56,6 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
 
    moveBuffer[index].targetVel = constrain( feed * motionFeedOverride, 0.01f, maxVel_XY );  // constrain to reasonable limits
 
-   moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
-
    float dx = _x - moveBuffer[index].X_start;
    float dy = _y - moveBuffer[index].Y_start;
    float dz = _z - moveBuffer[index].Z_start;
@@ -70,6 +68,8 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
       moveBuffer[index].Y_vector = dy * inverseLength;
       moveBuffer[index].Z_vector = dz * inverseLength;
 
+      moveBuffer[index].targetVel = min( moveBuffer[index].targetVel, moveBuffer[index].length * 1000.0f ); // block must take at least 1ms to execute
+
       setBlockAccel( index );
       setBlockFeed(  index );
    }
@@ -79,6 +79,8 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
       moveBuffer[index].Y_vector = 0.0f;
       moveBuffer[index].Z_vector = 0.0f;
    }
+
+   moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;
 
    setMaxStartVel(index);  // set cornering/start speed
 
