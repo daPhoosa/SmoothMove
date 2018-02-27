@@ -39,6 +39,7 @@
          void addLinear_Block( float _x, float _y, float _z, float _feed );
          void addArc_Block( int type, float _x, float _y, float _feed, float centerX, float centerY );
          void addDwell_Block( int delayMS );
+         void addDelay( int delayMS );
          void addExtrudeMM( float positionMM );
          void addExtrudeMM( float positionMM, float speed );
 
@@ -180,7 +181,6 @@
          int addBaseBlock( const float & _x, const float & _y, const float & _z );
          int AddNewBlockIndex();
          void removeOldBlock();
-         void addDelay( int delayMS );
 
          int previousBlockIndex( int currentIndex );
          int previousBlockIndex();
