@@ -344,16 +344,15 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       return;
    }
 
-   if( pathSmoothingOff )  // smoothing turned off
+   // symetric smoothing
+   float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf );
+
+   if( pathSmoothingOff ||          // smoothing turned off
+       smoothingRadius < 0.003f )   // return current position without smoothing if velocity is very low
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
       return;
    }
-
-   // symetric smoothing
-   float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf );
-
-   if( smoothingRadius < 0.003f ) return; // return current position without smoothing if velocity is very low
 
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
@@ -400,7 +399,8 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    }
    else // start is in a previous block (velocity is high enough that there must be a previous block)
    {
-      float position = max(0.0f, moveBuffer[smoothingIndexStart].length + smoothingPosStart);
+      //float position = max(0.0f, moveBuffer[smoothingIndexStart].length + smoothingPosStart);
+      float position = moveBuffer[smoothingIndexStart].length + smoothingPosStart;
       getPos( x1, y1, z1, smoothingIndexStart, position); // smoothing start position
    }
 
@@ -411,7 +411,8 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    }
    else // end position projects into the next block
    {
-      float position = min( moveBuffer[smoothingIndexEnd].length , smoothingPosEnd - moveBuffer[currentBlockIndex].length ); // don't go beyond the end of the next block
+      //float position = min( moveBuffer[smoothingIndexEnd].length , smoothingPosEnd - moveBuffer[currentBlockIndex].length ); // don't go beyond the end of the next block
+      float position = smoothingPosEnd - moveBuffer[currentBlockIndex].length;
       getPos( x2, y2, z2, smoothingIndexEnd, position); // smoothing end position is in the next block
    }
 
@@ -419,7 +420,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    y = ( y1 + y2 ) * 0.5f;
    z = ( z1 + z2 ) * 0.5f;
 
-   // two point smoothing creates a straight "chamfer"
+   // two point smoothing creates a straight "chamfer" across the corner
 }
 
 
