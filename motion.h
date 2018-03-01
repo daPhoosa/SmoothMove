@@ -59,7 +59,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
       segmentStartTime = micros();
    }
    else
-   { 
+   {
       uint32_t deltaTime = micros() - segmentStartTime;
 
       //  check if the next segment has been entered  -- while loop is used to cross multiple zero length segments
@@ -154,11 +154,18 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
    {
       float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
 
+      if( prevBlockDist < 0.0f && blockCount > 2 ) // look "past" very short blocks 
+      {
+         prevBlock = previousBlockIndex(prevBlock);
+         prevBlockDist = moveBuffer[prevBlock].length + prevBlockDist;
+         SERIAL_PORT.println("Very short block bridged for junction speed calc");
+      }
+
       float x1, y1, z1;
       float x2, y2, z2;
       getPos( x1, y1, z1, index, cornerRoundDist );
       getPos( x2, y2, z2, prevBlock, prevBlockDist );
-      float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate 
+      float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate
 
       x1 -= x2; // difference in positions
       y1 -= y2;
@@ -340,8 +347,8 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    if( pathSmoothingOff )  // smoothing turned off
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
-      return; 
-   } 
+      return;
+   }
 
    // symetric smoothing
    float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf );
@@ -381,7 +388,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
       return;
-   }  
+   }
 
    float x1, y1, z1;
    float x2, y2, z2;

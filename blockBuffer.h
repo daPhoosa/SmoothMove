@@ -23,7 +23,7 @@
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
    if( blockCount < 4 ) return true; // try to maintain 4 block look ahead minimum
-   
+
    if( blockCount >= bufferCount - 4 ) return false; // don't exceed max buffer size, save space for "extra" blocks
 
    if( lookAheadTime < lookAheadTimeMin ) return true; // try to insure adequate blocks to prevent velocity throttling
@@ -95,7 +95,7 @@ void SmoothMove::setBlockAccel( int index )
    {
       if( abs(moveBuffer[index].Z_vector) > 0.99f )  // Z only move
       {
-         moveBuffer[index].maxAccel         = maxAccel_Z;    // 
+         moveBuffer[index].maxAccel         = maxAccel_Z;    //
          moveBuffer[index].accelInverse     = accelInverse_Z;
          moveBuffer[index].accelInverseHalf = accelInverseHalf_Z;
          moveBuffer[index].accelDouble      = accelDouble_Z;
@@ -155,7 +155,7 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    float dYstart = moveBuffer[index].Y_start - centerY;
    float startRadiusSq = dXstart * dXstart + dYstart * dYstart;  // used later to compare start/end radii
    moveBuffer[index].radius = sqrtf(startRadiusSq);
-   
+
    moveBuffer[index].startAngle = atan2f(dYstart, dXstart);
    if(moveBuffer[index].startAngle < 0.0f) moveBuffer[index].startAngle += 6.2831853f; // force positive
 
@@ -254,7 +254,7 @@ void SmoothMove::addExtrudeMM( float positionMM, float speed )
 
 void SmoothMove::addExtrudeMM( float positionMM )
 {
-   
+
    moveBuffer[newBlockIndex].extrudeDist = ( positionMM - extrudeProgPos ) * extrudeRateOverride;
 
    computeExtrudeFactors( newBlockIndex );
@@ -306,7 +306,7 @@ void SmoothMove::removeOldBlock()
    else
    {
       // something screwed up if this is ever executed...
-      currentBlockIndex = blockCount = 0; 
+      currentBlockIndex = blockCount = 0;
       newBlockIndex = 1;
    }
 }
@@ -352,7 +352,7 @@ bool SmoothMove::blockQueueComplete()
       return true;
    }
 
-   return false; // otherwise still executing block queue 
+   return false; // otherwise still executing block queue
 }
 
 
