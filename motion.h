@@ -154,7 +154,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
    {
       float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
 
-      if( prevBlockDist < 0.0f && blockCount > 2 ) // look "past" very short blocks 
+      if( prevBlockDist < 0.0f && blockCount > 2 ) // look "past" very short blocks
       {
          prevBlock = previousBlockIndex(prevBlock);
          prevBlockDist = moveBuffer[prevBlock].length + prevBlockDist;

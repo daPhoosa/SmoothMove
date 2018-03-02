@@ -117,7 +117,7 @@
             ArcCCW
          };
 
-         const static int bufferCount = 32;
+         const static int BUFFER_COUNT = 32;
 
          struct block_t
          {
@@ -141,10 +141,10 @@
             moveType_t moveType;
 
             bool fastJunction;  // true if the transition from the prev block does not reduce vel
-         } moveBuffer[bufferCount];
+         } moveBuffer[BUFFER_COUNT];
 
-         float xVel[bufferCount];      // velocity at block boundarys
-         float xVel_Sq[bufferCount];   // boundary velocities squared
+         float xVel[BUFFER_COUNT];      // velocity at block boundarys
+         float xVel_Sq[BUFFER_COUNT];   // boundary velocities squared
 
          float motionFeedOverride, extrudeRateOverride;
 

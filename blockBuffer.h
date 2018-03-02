@@ -24,7 +24,7 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 {
    if( blockCount < 4 ) return true; // try to maintain 4 block look ahead minimum
 
-   if( blockCount >= bufferCount - 4 ) return false; // don't exceed max buffer size, save space for "extra" blocks
+   if( blockCount >= BUFFER_COUNT - 4 ) return false; // don't exceed max buffer size, save space for "extra" blocks
 
    if( lookAheadTime < lookAheadTimeMin ) return true; // try to insure adequate blocks to prevent velocity throttling
 
@@ -34,7 +34,7 @@ bool SmoothMove::bufferVacancy() // always call this to check for room before ad
 
 void SmoothMove::addDwell_Block( int delayMS )  // add block with no movement to block que, then append delay
 {
-   if( blockCount < bufferCount - 1 )
+   if( blockCount < BUFFER_COUNT - 1 )
    {
       addLinear_Block( X_end, Y_end, Z_end, maxVel_XY );
    }
@@ -326,13 +326,13 @@ int SmoothMove::nextBlockIndex( int currentIndex )  // direction of travel
    if(currentIndex > 0)
       return currentIndex - 1;
 
-   return bufferCount - 1;
+   return BUFFER_COUNT - 1;
 }
 
 
 int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of travel
 {
-   if(currentIndex < bufferCount - 1)
+   if(currentIndex < BUFFER_COUNT - 1)
       return currentIndex + 1;
 
    return 0;
