@@ -154,11 +154,13 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
    {
       float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
 
-      if( prevBlockDist < 0.0f && blockCount > 2 ) // look "past" very short blocks
+      int bCount = blockCount;
+
+      while( prevBlockDist < 0.0f && bCount > 2 )  // look backwards past very short blocks
       {
+         bCount--;
          prevBlock = previousBlockIndex(prevBlock);
          prevBlockDist = moveBuffer[prevBlock].length + prevBlockDist;
-         SERIAL_PORT.println("Very short block bridged for junction speed calc");
       }
 
       float x1, y1, z1;
