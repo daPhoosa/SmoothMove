@@ -65,7 +65,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
       //  check if the next segment has been entered  -- while loop is used to cross multiple zero length segments
       while( deltaTime > segmentTime )
       {
-         int next = nextBlockIndex( currentBlockIndex );
          segmentStartTime += segmentTime; // advance start time by previous segment time
          deltaTime -= segmentTime;
 
