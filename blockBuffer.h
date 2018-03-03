@@ -85,7 +85,6 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
    setMaxStartVel(index);  // set cornering/start speed
 
    constAccelTrajectory();
-
 }
 
 
@@ -203,7 +202,6 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
    setMaxStartVel(index);  // set cornering/start speed
 
    constAccelTrajectory();
-
 }
 
 
@@ -315,6 +313,9 @@ void SmoothMove::removeOldBlock()
 int SmoothMove::AddNewBlockIndex()
 {
    newBlockIndex = nextBlockIndex( newBlockIndex );
+
+   moveBuffer[newBlockIndex].ready = false;
+
    blockCount++;
 
    return newBlockIndex;

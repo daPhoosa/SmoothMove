@@ -65,7 +65,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
       //  check if the next segment has been entered  -- while loop is used to cross multiple zero length segments
       while( deltaTime > segmentTime )
       {
-
+         int next = nextBlockIndex( currentBlockIndex );
          segmentStartTime += segmentTime; // advance start time by previous segment time
          deltaTime -= segmentTime;
 
@@ -97,9 +97,11 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                break;
 
             case 3 : // wait for next block
-               if( blockCount > 1 && !moveBuffer[currentBlockIndex].staticExtrude )
+               if( blockCount > 1 &&                                       // must be another block must exist
+                   !moveBuffer[currentBlockIndex].staticExtrude &&         // wait until static extrude is complete
+                   moveBuffer[nextBlockIndex(currentBlockIndex)].ready )   // wait until next block is ready
                {
-                  segmentIndex = 4; // only advance to next block if one exists
+                  segmentIndex = 4;
                   segmentTime  = 0;
                }
                else
@@ -215,6 +217,8 @@ void SmoothMove::constAccelTrajectory()
       //    These can only be made slower, never faster
       //    Reminder: the current (oldest) block should not be adjusted
 
+      moveBuffer[exit].ready = false;
+
       xVel[start] = moveBuffer[exit].maxStartVel;
       xVel_Sq[start] = xVel[start] * xVel[start];
 
@@ -313,6 +317,8 @@ void SmoothMove::constAccelTrajectory()
       }
 
       lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
+
+      moveBuffer[index].ready = true;
 
       // move forward in block queue
       exit  = nextBlockIndex(exit);

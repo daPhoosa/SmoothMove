@@ -141,6 +141,7 @@
             moveType_t moveType;
 
             bool fastJunction;  // true if the transition from the prev block does not reduce vel
+            bool ready;
          } moveBuffer[BUFFER_COUNT];
 
          float xVel[BUFFER_COUNT];      // velocity at block boundarys
