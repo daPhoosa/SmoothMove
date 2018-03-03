@@ -97,7 +97,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                break;
 
             case 3 : // wait for next block
-               if( blockCount > 1 &&                                       // must be another block must exist
+               if( blockCount > 1 &&                                       // another block must exist
                    !moveBuffer[currentBlockIndex].staticExtrude &&         // wait until static extrude is complete
                    moveBuffer[nextBlockIndex(currentBlockIndex)].ready )   // wait until next block is ready
                {
@@ -106,7 +106,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                }
                else
                {
-                  segmentTime = 10000UL; // force 10ms of dwell before checking again
+                  segmentTime = 1000UL; // force 1ms of dwell before checking again
                }
                break;
          }
