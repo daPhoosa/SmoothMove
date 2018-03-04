@@ -298,6 +298,8 @@ void SmoothMove::removeOldBlock()
          extrudeMachPos += moveBuffer[currentBlockIndex].extrudeDist;
       }
 
+      moveBuffer[currentBlockIndex].ready = false;
+
       currentBlockIndex = nextBlockIndex(currentBlockIndex);
       blockCount--;
    }

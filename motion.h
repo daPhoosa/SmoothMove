@@ -364,70 +364,41 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
 
-   bool startInBlock, endInBlock;
-   int smoothingIndexStart, smoothingIndexEnd;
+   bool startInBlock = true;
+   bool endInBlock   = true;
 
-   if( smoothingPosStart >= 0.0f ) // check if start point is in current block
-   {
-      startInBlock = true;
-      smoothingIndexStart = currentBlockIndex;
-   }
-   else
-   {
-      startInBlock = false;
-      smoothingIndexStart = previousBlockIndex(currentBlockIndex);
-   }
+   int smoothingIndexStart = currentBlockIndex;
+   int smoothingIndexEnd   = currentBlockIndex;
 
-   if( smoothingPosEnd <= moveBuffer[currentBlockIndex].length || blockCount < 2 ) // check if end point is in current block
+   while( smoothingPosStart < 0.0f )   // find start point in previous block
    {
-      endInBlock = true;
-      smoothingIndexEnd = currentBlockIndex;
+      startInBlock        = false;
+      smoothingIndexStart = previousBlockIndex(smoothingIndexStart);
+      smoothingPosStart  += moveBuffer[smoothingIndexStart].length;
    }
-   else
+   
+   while( smoothingPosEnd > moveBuffer[smoothingIndexEnd].length ) // find end point in future block
    {
-      endInBlock   = false;
-      smoothingIndexEnd = nextBlockIndex(currentBlockIndex);
+      endInBlock        = false;
+      smoothingPosEnd  -= moveBuffer[smoothingIndexEnd].length;
+      smoothingIndexEnd = nextBlockIndex(smoothingIndexEnd);
    }
 
    if( ( startInBlock && endInBlock ) ||                 // do not smooth if "far" from junction (both points lie in the current block)
-         moveBuffer[smoothingIndexEnd].fastJunction )    // do not smooth if junction does not force deceleration
+         moveBuffer[nextBlockIndex(currentBlockIndex)].fastJunction ) // do not smooth if next junction does not force deceleration
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
       return;
    }
 
-   float x1, y1, z1;
    float x2, y2, z2;
 
-   // get trailing smoothing position
-   if( startInBlock )
-   {
-      getPos( x1, y1, z1, smoothingIndexStart, smoothingPosStart); // smoothing start position
-   }
-   else // start is in a previous block (velocity is high enough that there must be a previous block)
-   {
-      //float position = max(0.0f, moveBuffer[smoothingIndexStart].length + smoothingPosStart);
-      float position = moveBuffer[smoothingIndexStart].length + smoothingPosStart;
-      getPos( x1, y1, z1, smoothingIndexStart, position); // smoothing start position
-   }
-
-   // get leading smoothing position
-   if( endInBlock )
-   {
-      getPos( x2, y2, z2, smoothingIndexEnd, smoothingPosEnd); // smoothing end position is in this block
-   }
-   else // end position projects into the next block
-   {
-      //float position = min( moveBuffer[smoothingIndexEnd].length , smoothingPosEnd - moveBuffer[currentBlockIndex].length ); // don't go beyond the end of the next block
-      float position = smoothingPosEnd - moveBuffer[currentBlockIndex].length;
-      getPos( x2, y2, z2, smoothingIndexEnd, position); // smoothing end position is in the next block
-   }
-
-   x = ( x1 + x2 ) * 0.5f; // average two smoothing points
-   y = ( y1 + y2 ) * 0.5f;
-   z = ( z1 + z2 ) * 0.5f;
-
-   // two point smoothing creates a straight "chamfer" across the corner
+   getPos( x,  y,  z,  smoothingIndexStart, smoothingPosStart); // smoothing start position
+   getPos( x2, y2, z2, smoothingIndexEnd,   smoothingPosEnd);   // smoothing end position is in this block
+   
+   x = ( x + x2 ) * 0.5f;  // average two smoothing points
+   y = ( y + y2 ) * 0.5f;
+   z = ( z + z2 ) * 0.5f;  // two point smoothing creates a straight "chamfer" across the corner
 }
 
 
