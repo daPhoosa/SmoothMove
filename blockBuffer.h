@@ -68,8 +68,6 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
       moveBuffer[index].Y_vector = dy * inverseLength;
       moveBuffer[index].Z_vector = dz * inverseLength;
 
-      moveBuffer[index].targetVel = min( moveBuffer[index].targetVel, moveBuffer[index].length * 1000.0f ); // block must take at least 1ms to execute
-
       setBlockAccel( index );
       setBlockFeed(  index );
    }
