@@ -352,10 +352,10 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    }
 
    // symetric smoothing
-   float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf );
+   float smoothingRadius = min( cornerRoundDistHalf, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf - 0.001f );
 
    if( pathSmoothingOff ||          // smoothing turned off
-       smoothingRadius < 0.003f )   // return current position without smoothing if velocity is very low
+       smoothingRadius < 0.001f )   // return current position without smoothing if velocity is very low
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
       return;
