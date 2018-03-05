@@ -329,6 +329,7 @@ void SmoothMove::constAccelTrajectory()
       exit  = nextBlockIndex(exit);
       start = nextBlockIndex(start);
    }
+   moveBuffer[newBlockIndex].ready = true;
 }
 
 
