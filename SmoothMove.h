@@ -117,7 +117,7 @@
             ArcCCW
          };
 
-         const static int BUFFER_COUNT = 32;
+         const static int BUFFER_COUNT = 100;
 
          struct block_t
          {
@@ -154,7 +154,7 @@
 
          float blockPosition, velocityNow;
 
-         int currentBlockIndex, newBlockIndex, blockCount, segmentIndex;
+         volatile int currentBlockIndex, newBlockIndex, blockCount, segmentIndex;
 
          float X_end, Y_end, Z_end;
 
@@ -192,7 +192,7 @@
          int nextBlockIndex();
 
          void setMaxStartVel( const int & index );
-         void getPos( float & x, float & y, float & z, const int & index, const float & position );
+         void getPos( float & x, float & y, float & z, int index, const float & position );
          void computeExtrudeFactors( int index );
 
          void setBlockAccel( int index );

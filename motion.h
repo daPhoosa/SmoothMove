@@ -217,7 +217,7 @@ void SmoothMove::constAccelTrajectory()
    xVel[exit]    = 0.0f;   // newest block always ends at zero
    xVel_Sq[exit] = 0.0f;
 
-   for( int i = blockCount - 2; i > 0 ; i-- )
+   for( int i = blockCount - 1; i > 0 ; i-- )
    {
       // iterate through the active blocks backwards (newest to oldest)
       //    On the first pass, only border velocities are changed
@@ -253,7 +253,7 @@ void SmoothMove::constAccelTrajectory()
    if( segmentIndex < 1 ) lookAheadTime += moveBuffer[currentBlockIndex].velTime;    // include const vel time
    if( segmentIndex < 2 ) lookAheadTime += moveBuffer[currentBlockIndex].decelTime;  // include decel time
 
-   for( int i = blockCount - 1; i > 0 ; i-- )
+   for( int i = blockCount; i > 0 ; i-- )
    {
       //Serial.print( exit );Serial.print(" ");
       // iterate forward
@@ -404,7 +404,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
 }
 
 
-void SmoothMove::getPos(float & x, float & y, float & z, const int & index, const float & position)  // maps from accel trajectory to 3D space
+void SmoothMove::getPos(float & x, float & y, float & z, int index, const float & position)  // maps from accel trajectory to 3D space
 {
    float angle;
 
