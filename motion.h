@@ -364,28 +364,23 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    float smoothingPosStart = blockPosition - smoothingRadius;
    float smoothingPosEnd   = blockPosition + smoothingRadius;
 
-   bool startInBlock = true;
-   bool endInBlock   = true;
-
    int smoothingIndexStart = currentBlockIndex;
    int smoothingIndexEnd   = currentBlockIndex;
 
-   while( smoothingPosStart < 0.0f )   // find start point in previous block
+   while( smoothingPosStart < 0.0f )   // find start point in previous blocks
    {
-      startInBlock        = false;
       smoothingIndexStart = previousBlockIndex(smoothingIndexStart);
       smoothingPosStart  += moveBuffer[smoothingIndexStart].length;
    }
    
-   while( smoothingPosEnd > moveBuffer[smoothingIndexEnd].length ) // find end point in future block
+   while( smoothingPosEnd > moveBuffer[smoothingIndexEnd].length ) // find end point in future blocks
    {
-      endInBlock        = false;
       smoothingPosEnd  -= moveBuffer[smoothingIndexEnd].length;
       smoothingIndexEnd = nextBlockIndex(smoothingIndexEnd);
    }
 
-   if( ( startInBlock && endInBlock ) ||                 // do not smooth if "far" from junction (both points lie in the current block)
-         moveBuffer[nextBlockIndex(currentBlockIndex)].fastJunction ) // do not smooth if next junction does not force deceleration
+   if( smoothingIndexStart == smoothingIndexEnd ||                  // do not smooth if "far" from junction (both points lie in the current block)
+       moveBuffer[nextBlockIndex(currentBlockIndex)].fastJunction ) // do not smooth if next junction does not force deceleration
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
       return;
