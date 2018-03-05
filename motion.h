@@ -202,21 +202,29 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
 void SmoothMove::constAccelTrajectory()
 {
+   /*
+      Block Diagram:
+      [current block][  ][  ][  ][  ][  ][newest block]
+      ---direction of execution--->
+      [current block][  ][  ][  ][  ][  ][start][exit]       
+   */
+
    int exit  = newBlockIndex;
    int start = previousBlockIndex(exit);
+
+   moveBuffer[exit].ready = false;
 
    xVel[exit]    = 0.0f;   // newest block always ends at zero
    xVel_Sq[exit] = 0.0f;
 
    for( int i = blockCount - 2; i > 0 ; i-- )
    {
-
       // iterate through the active blocks backwards (newest to oldest)
       //    On the first pass, only border velocities are changed
       //    These can only be made slower, never faster
       //    Reminder: the current (oldest) block should not be adjusted
 
-      moveBuffer[exit].ready = false;
+      moveBuffer[start].ready = false;
 
       xVel[start] = moveBuffer[exit].maxStartVel;
       xVel_Sq[start] = xVel[start] * xVel[start];
@@ -252,50 +260,48 @@ void SmoothMove::constAccelTrajectory()
       //    check and set boundary velocities
       //    set position and time variables
 
-      int index = exit;  // for reading clarity, index points to current block
+      float distToDeltaVel = (xVel_Sq[exit] - xVel_Sq[start]) * moveBuffer[exit].accelInverseHalf;
 
-      float distToDeltaVel = (xVel_Sq[exit] - xVel_Sq[start]) * moveBuffer[index].accelInverseHalf;
-
-      if(distToDeltaVel > moveBuffer[index].length)
+      if(distToDeltaVel > moveBuffer[exit].length)
       {
          // not enough room to accel from startVel to endVel
 
-         xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[index].accelDouble * moveBuffer[index].length; // set exitVel lower
+         xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set exitVel lower
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
 
-         moveBuffer[index].peakVel = xVel[start];  // shouldn't need this...
+         moveBuffer[exit].peakVel = xVel[start];  // shouldn't need this...
 
-         moveBuffer[index].accelTime     = uint32_t(( xVel[exit] - xVel[start] ) * moveBuffer[index].accelInverse * 1000000.0f);
-         moveBuffer[index].accelEndPoint = moveBuffer[index].length;
+         moveBuffer[exit].accelTime     = uint32_t(( xVel[exit] - xVel[start] ) * moveBuffer[exit].accelInverse * 1000000.0f);
+         moveBuffer[exit].accelEndPoint = moveBuffer[exit].length;
 
-         moveBuffer[index].velTime       = 0;
-         moveBuffer[index].velEndPoint   = moveBuffer[index].accelEndPoint;
+         moveBuffer[exit].velTime       = 0;
+         moveBuffer[exit].velEndPoint   = moveBuffer[exit].accelEndPoint;
 
-         moveBuffer[index].decelTime     = 0;
-         moveBuffer[index].decelLength   = 0.0f;
+         moveBuffer[exit].decelTime     = 0;
+         moveBuffer[exit].decelLength   = 0.0f;
       }
       else
       {
          // Compute accel and decel
 
-         moveBuffer[index].decelLength   = ( moveBuffer[index].targetVel_Sq - xVel_Sq[exit]  ) * moveBuffer[index].accelInverseHalf;
+         moveBuffer[exit].decelLength   = ( moveBuffer[exit].targetVel_Sq - xVel_Sq[exit]  ) * moveBuffer[exit].accelInverseHalf;
 
-         moveBuffer[index].accelEndPoint = ( moveBuffer[index].targetVel_Sq - xVel_Sq[start] ) * moveBuffer[index].accelInverseHalf;
+         moveBuffer[exit].accelEndPoint = ( moveBuffer[exit].targetVel_Sq - xVel_Sq[start] ) * moveBuffer[exit].accelInverseHalf;
 
-         float constVelLength = moveBuffer[index].length - moveBuffer[index].decelLength - moveBuffer[index].accelEndPoint;
+         float constVelLength = moveBuffer[exit].length - moveBuffer[exit].decelLength - moveBuffer[exit].accelEndPoint;
 
          // Check for enough room to execute both
          if(constVelLength > 0.0f)  // accel should end before const vel
          {
             // enough room for both accel to and decel from targetVel
 
-            moveBuffer[index].peakVel = moveBuffer[index].targetVel;
+            moveBuffer[exit].peakVel = moveBuffer[exit].targetVel;
 
-            moveBuffer[index].velEndPoint = constVelLength + moveBuffer[index].accelEndPoint;
+            moveBuffer[exit].velEndPoint = constVelLength + moveBuffer[exit].accelEndPoint;
 
-            moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].targetVel - xVel[start] ) * moveBuffer[index].accelInverse * 1000000.0f);
-            moveBuffer[index].velTime   = uint32_t(( moveBuffer[index].velEndPoint - moveBuffer[index].accelEndPoint) / moveBuffer[index].targetVel * 1000000.0f);
-            moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].targetVel - xVel[exit]  ) * moveBuffer[index].accelInverse * 1000000.0f);
+            moveBuffer[exit].accelTime = uint32_t(( moveBuffer[exit].targetVel - xVel[start] ) * moveBuffer[exit].accelInverse * 1000000.0f);
+            moveBuffer[exit].velTime   = uint32_t(( moveBuffer[exit].velEndPoint - moveBuffer[exit].accelEndPoint) / moveBuffer[exit].targetVel * 1000000.0f);
+            moveBuffer[exit].decelTime = uint32_t(( moveBuffer[exit].targetVel - xVel[exit]  ) * moveBuffer[exit].accelInverse * 1000000.0f);
          }
          else
          {
@@ -303,21 +309,21 @@ void SmoothMove::constAccelTrajectory()
 
             float halfExcessLength = constVelLength * 0.5f;  // negative
 
-            moveBuffer[index].accelEndPoint += halfExcessLength;
-            moveBuffer[index].velEndPoint    = moveBuffer[index].accelEndPoint; // zero length
-            moveBuffer[index].decelLength   += halfExcessLength;
+            moveBuffer[exit].accelEndPoint += halfExcessLength;
+            moveBuffer[exit].velEndPoint    = moveBuffer[exit].accelEndPoint; // zero length
+            moveBuffer[exit].decelLength   += halfExcessLength;
 
-            moveBuffer[index].peakVel   = sqrtf( xVel_Sq[start] + moveBuffer[index].accelDouble * moveBuffer[index].accelEndPoint );
+            moveBuffer[exit].peakVel   = sqrtf( xVel_Sq[start] + moveBuffer[exit].accelDouble * moveBuffer[exit].accelEndPoint );
 
-            moveBuffer[index].accelTime = uint32_t(( moveBuffer[index].peakVel - xVel[start]) * moveBuffer[index].accelInverse * 1000000.0f);
-            moveBuffer[index].velTime   = 0;
-            moveBuffer[index].decelTime = uint32_t(( moveBuffer[index].peakVel - xVel[exit] ) * moveBuffer[index].accelInverse * 1000000.0f);
+            moveBuffer[exit].accelTime = uint32_t(( moveBuffer[exit].peakVel - xVel[start]) * moveBuffer[exit].accelInverse * 1000000.0f);
+            moveBuffer[exit].velTime   = 0;
+            moveBuffer[exit].decelTime = uint32_t(( moveBuffer[exit].peakVel - xVel[exit] ) * moveBuffer[exit].accelInverse * 1000000.0f);
          }
       }
 
-      lookAheadTime += moveBuffer[index].accelTime + moveBuffer[index].velTime + moveBuffer[index].decelTime;
+      lookAheadTime += moveBuffer[exit].accelTime + moveBuffer[exit].velTime + moveBuffer[exit].decelTime;
 
-      moveBuffer[index].ready = true;
+      moveBuffer[exit].ready = true;
 
       // move forward in block queue
       exit  = nextBlockIndex(exit);
@@ -355,7 +361,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    float smoothingRadius = min( cornerRoundDist, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf - 0.001f );
 
    if( pathSmoothingOff ||          // smoothing turned off
-       smoothingRadius < 0.001f )   // return current position without smoothing if velocity is very low
+       smoothingRadius < 0.0001f )   // return current position without smoothing if velocity is very low
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
       return;
@@ -393,7 +399,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    
    x = ( x + x2 ) * 0.5f;  // average two smoothing points
    y = ( y + y2 ) * 0.5f;
-   z = ( z + z2 ) * 0.5f;  // two point smoothing creates a straight "chamfer" across the corner
+   z = ( z + z2 ) * 0.5f;
 }
 
 

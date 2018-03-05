@@ -144,5 +144,4 @@ void SmoothMove::setCornerRounding( float _cornerRounding )
 {
    cornerRoundDist     = max( _cornerRounding, 0.001f );
    cornerRoundDistSq   = cornerRoundDist * cornerRoundDist;
-   cornerRoundDistHalf = cornerRoundDist * 0.5f;
 }
