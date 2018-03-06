@@ -152,7 +152,7 @@
          float extrudeProgPos, extrudeMachPos;
          float extrudeVel, extrudeAccel;
 
-         float blockPosition, velocityNow;
+         volatile float blockPosition, velocityNow;
 
          volatile int currentBlockIndex, newBlockIndex, blockCount, segmentIndex;
 
@@ -168,9 +168,9 @@
 
          bool motionStopped;
 
-         uint32_t lookAheadTime, lookAheadTimeMin;
+         volatile uint32_t lookAheadTime, lookAheadTimeMin;
 
-         uint32_t segmentStartTime, segmentTime;
+         volatile uint32_t segmentStartTime, segmentTime;
 
          bool pathSmoothingOff;
 

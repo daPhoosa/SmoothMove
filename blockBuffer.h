@@ -289,7 +289,6 @@ void SmoothMove::removeOldBlock()
    if(blockCount > 0) // don't allow negative block counts
    {
       blockPosition -= moveBuffer[currentBlockIndex].length;
-      moveBuffer[currentBlockIndex].targetVel = 0.0f;
 
       if( abs(moveBuffer[currentBlockIndex].extrudeDist) > 0.0001f && moveBuffer[currentBlockIndex].length > 0.0f ) // dont double count extrude for static extrudes
       {

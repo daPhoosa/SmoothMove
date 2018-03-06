@@ -51,7 +51,6 @@ void SmoothMove::abortMotion() // all blocks in queue will be lost on restart
 
 void SmoothMove::advancePostion() // this moves forward along the acc/dec trajectory
 {
-
    if( blockCount == 0 || motionStopped )
    {
       // no blocks ready to be executed
