@@ -192,7 +192,7 @@
          int nextBlockIndex();
 
          void setMaxStartVel( const int & index );
-         void getPos( float & x, float & y, float & z, int index, const float & position );
+         void getPos( float & x, float & y, float & z, int index, float position );
          void computeExtrudeFactors( int index );
 
          void setBlockAccel( int index );

@@ -403,7 +403,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
 }
 
 
-void SmoothMove::getPos(float & x, float & y, float & z, int index, const float & position)  // maps from accel trajectory to 3D space
+void SmoothMove::getPos(float & x, float & y, float & z, int index, float position)  // maps from accel trajectory to 3D space
 {
    float angle;
 
