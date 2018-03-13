@@ -347,8 +347,6 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
 
    */
 
-   advancePostion();
-
    if(blockCount == 0) // if no blocks are queued up, return current end point
    {
       x = X_end;

@@ -65,6 +65,7 @@
          void junctionSmoothingOff();
          void junctionSmoothingOn();
 
+         void advancePostion();
          void getTargetLocation( float & x, float & y, float & z );
          float getExtrudeLocationMM();
 
@@ -176,7 +177,6 @@
 
 
          // *** PRIVATE FUNCTIONS ***
-         void advancePostion();
          void constAccelTrajectory();
 
          int addBaseBlock( const float & _x, const float & _y, const float & _z );
