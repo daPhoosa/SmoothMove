@@ -124,7 +124,7 @@
          {
             float P_5, P_4, P_3; // position coef
             float C_1;           // pos and vel coef
-            float V_5, V_4, V_3; // velocity coef
+            float V_4, V_3, V_2; // velocity coef
          };
 
          struct block_t
@@ -187,7 +187,7 @@
 
 
          // *** PRIVATE FUNCTIONS ***
-         void constAccelTrajectory();
+         void minJerkTrajectory();
 
          int addBaseBlock( const float & _x, const float & _y, const float & _z );
          int AddNewBlockIndex();

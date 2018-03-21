@@ -110,30 +110,48 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
          }
       }
 
-      float dt, dt_Sq;
+      float t = float(deltaTime) * (1.0f / 1000000.0f); // time in seconds
+      float t_2, t_3, t_4, t_5;
       int start;
 
       switch(segmentIndex)  // compute current position in the block
       {
          case 0 : // state: Accel
-            dt = float(deltaTime) * 0.000001f;
-            dt_Sq = dt * dt;
+            t_2 = t * t;
+            t_3 = t * t_2;
+            t_4 = t * t_3;
+            t_5 = t * t_4;
             start = previousBlockIndex(currentBlockIndex);
-            blockPosition = 0.5f * moveBuffer[currentBlockIndex].maxAccel * dt_Sq + xVel[start] * dt;
-            velocityNow = moveBuffer[currentBlockIndex].maxAccel * dt + xVel[start];
+            blockPosition = moveBuffer[currentBlockIndex].Acc.P_5 * t_5 +
+                            moveBuffer[currentBlockIndex].Acc.P_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Acc.P_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Acc.C_1 * t;
+            velocityNow = moveBuffer[currentBlockIndex].Acc.V_4 * t_4 +
+                          moveBuffer[currentBlockIndex].Acc.V_3 * t_3 +
+                          moveBuffer[currentBlockIndex].Acc.V_2 * t_2 +
+                          moveBuffer[currentBlockIndex].Acc.C_1 * t;
             break;
 
          case 1 : // state: Const Vel
-            dt = float(deltaTime) * 0.000001f;
-            blockPosition = moveBuffer[currentBlockIndex].targetVel * dt + moveBuffer[currentBlockIndex].accelEndPoint;
+            blockPosition = moveBuffer[currentBlockIndex].targetVel * t + moveBuffer[currentBlockIndex].accelEndPoint;
             velocityNow = moveBuffer[currentBlockIndex].targetVel;
             break;
 
          case 2 : // state: Decel
-            dt = float(deltaTime) * 0.000001f;
-            dt_Sq = dt * dt;
-            blockPosition = -0.5f * moveBuffer[currentBlockIndex].maxAccel * dt_Sq + moveBuffer[currentBlockIndex].peakVel * dt + moveBuffer[currentBlockIndex].velEndPoint;
-            velocityNow = -moveBuffer[currentBlockIndex].maxAccel * dt + moveBuffer[currentBlockIndex].peakVel;
+            t_2 = t * t;
+            t_3 = t * t_2;
+            t_4 = t * t_3;
+            t_5 = t * t_4;
+            start = previousBlockIndex(currentBlockIndex);
+            blockPosition = moveBuffer[currentBlockIndex].Dec.P_5 * t_5 +
+                            moveBuffer[currentBlockIndex].Dec.P_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Dec.P_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Dec.C_1 * t   +
+                            moveBuffer[currentBlockIndex].velEndPoint;
+            velocityNow = moveBuffer[currentBlockIndex].Dec.V_4 * t_4 +
+                          moveBuffer[currentBlockIndex].Dec.V_3 * t_3 +
+                          moveBuffer[currentBlockIndex].Dec.V_2 * t_2 +
+                          moveBuffer[currentBlockIndex].Dec.C_1 * t;
             break;
 
          case 3 : // state: Dwell
@@ -199,7 +217,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 }
 
 
-void SmoothMove::constAccelTrajectory()
+void SmoothMove::minJerkTrajectory()
 {
    /*
       Block Diagram:
@@ -230,15 +248,13 @@ void SmoothMove::constAccelTrajectory()
 
       float distToDeltaVel = (xVel_Sq[start] - xVel_Sq[exit]) * moveBuffer[exit].accelInverseHalf;
 
-      if(distToDeltaVel > moveBuffer[exit].length)
+      if(distToDeltaVel > moveBuffer[exit].length) // not enough room to decel from startVel to endVel
       {
-         // not enough room to decel from startVel to endVel
          xVel_Sq[start] = xVel_Sq[exit] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set startVel lower
          xVel[start]    = sqrtf(xVel_Sq[start]);
       }
-      else if(distToDeltaVel < -moveBuffer[exit].length)
+      else if(distToDeltaVel < -moveBuffer[exit].length) // not enough room to accel from startVel to endVel
       {
-         // not enough room to accel from startVel to endVel
          xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set exitVel lower
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
       }
@@ -261,10 +277,8 @@ void SmoothMove::constAccelTrajectory()
 
       float distToDeltaVel = (xVel_Sq[exit] - xVel_Sq[start]) * moveBuffer[exit].accelInverseHalf;
 
-      if(distToDeltaVel > moveBuffer[exit].length)
+      if(distToDeltaVel > moveBuffer[exit].length) // not enough room to accel from startVel to endVel
       {
-         // not enough room to accel from startVel to endVel
-
          xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set exitVel lower
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
 
@@ -279,10 +293,8 @@ void SmoothMove::constAccelTrajectory()
          moveBuffer[exit].decelTime     = 0;
          moveBuffer[exit].decelLength   = 0.0f;
       }
-      else
+      else  // Compute accel and decel
       {
-         // Compute accel and decel
-
          moveBuffer[exit].decelLength   = ( moveBuffer[exit].targetVel_Sq - xVel_Sq[exit]  ) * moveBuffer[exit].accelInverseHalf;
 
          moveBuffer[exit].accelEndPoint = ( moveBuffer[exit].targetVel_Sq - xVel_Sq[start] ) * moveBuffer[exit].accelInverseHalf;
@@ -302,10 +314,8 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[exit].velTime   = uint32_t(( moveBuffer[exit].velEndPoint - moveBuffer[exit].accelEndPoint) / moveBuffer[exit].targetVel * 1000000.0f);
             moveBuffer[exit].decelTime = uint32_t(( moveBuffer[exit].targetVel - xVel[exit]  ) * moveBuffer[exit].accelInverse * 1000000.0f);
          }
-         else
+         else  // peaked acceleration, targetVel not reached
          {
-            // peaked acceleration, targetVel not reached
-
             float halfExcessLength = constVelLength * 0.5f;  // negative
 
             moveBuffer[exit].accelEndPoint += halfExcessLength;
@@ -322,14 +332,14 @@ void SmoothMove::constAccelTrajectory()
 
       lookAheadTime += moveBuffer[exit].accelTime + moveBuffer[exit].velTime + moveBuffer[exit].decelTime;
 
-      if( moveBuffer[exit].accelTime > 0 )
+      if( moveBuffer[exit].accelTime > 0 ) // generate min jerk coefficients for acceleration
       {
          getTransCoef( moveBuffer[exit].accelTime, moveBuffer[exit].accelEndPoint, xVel[start], moveBuffer[exit].peakVel, moveBuffer[exit].Acc );
       }
 
-      if( moveBuffer[exit].decelTime > 0 )
+      if( moveBuffer[exit].decelTime > 0 ) // generate min jerk coefficients for deceleration
       {
-         getTransCoef( moveBuffer[exit].decelTime, moveBuffer[exit].velEndPoint, moveBuffer[exit].peakVel, xVel[exit], moveBuffer[exit].Dec );
+         getTransCoef( moveBuffer[exit].decelTime, moveBuffer[exit].decelLength, moveBuffer[exit].peakVel, xVel[exit], moveBuffer[exit].Dec );
       }
 
       moveBuffer[exit].ready = true;
@@ -344,18 +354,6 @@ void SmoothMove::constAccelTrajectory()
 
 void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to get current cartesian position
 {
-   /*
-      TIME TESTS
-                     Teensy 3.2     Teensy 3.5
-      Min               7us            2us         (middle of a line segment when no smoothing is happening)
-
-      Avg (linear)      13us           2us         (only linear moves, geometry dependent)
-      Max (linear)      34us           6us         (time during line to line smoothing)
-
-      Avg (mixed)       30us           15us        (mixed linear and arc moves, geometry dependent)
-      Max (Arc)         300us          200us       (time during arc to arc transitions)
-
-   */
 
    if(blockCount == 0) // if no blocks are queued up, return current end point
    {
@@ -598,7 +596,7 @@ void SmoothMove::getTransCoef( const uint32_t & time, const float & pos_end, con
 
    X.C_1 = M[3][4];
 
-   X.V_5 = M[0][4] * 5.0f;
-   X.V_4 = M[1][4] * 4.0f;
-   X.V_3 = M[2][4] * 3.0f;
+   X.V_4 = M[0][4] * 5.0f;
+   X.V_3 = M[1][4] * 4.0f;
+   X.V_2 = M[2][4] * 3.0f;
 }
