@@ -82,7 +82,7 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
 
    setMaxStartVel(index);  // set cornering/start speed
 
-   constAccelTrajectory();
+   minJerkTrajectory();
 }
 
 
@@ -199,7 +199,7 @@ void SmoothMove::addArc_Block(int type, float _x, float _y, float _feed, float c
 
    setMaxStartVel(index);  // set cornering/start speed
 
-   constAccelTrajectory();
+   minJerkTrajectory();
 }
 
 

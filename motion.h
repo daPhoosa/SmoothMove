@@ -112,7 +112,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
 
       float t = float(deltaTime) * (1.0f / 1000000.0f); // time in seconds
       float t_2, t_3, t_4, t_5;
-      int start;
 
       switch(segmentIndex)  // compute current position in the block
       {
@@ -121,7 +120,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
             t_3 = t * t_2;
             t_4 = t * t_3;
             t_5 = t * t_4;
-            start = previousBlockIndex(currentBlockIndex);
             blockPosition = moveBuffer[currentBlockIndex].Acc.P_5 * t_5 +
                             moveBuffer[currentBlockIndex].Acc.P_4 * t_4 +
                             moveBuffer[currentBlockIndex].Acc.P_3 * t_3 +
@@ -142,7 +140,6 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
             t_3 = t * t_2;
             t_4 = t * t_3;
             t_5 = t * t_4;
-            start = previousBlockIndex(currentBlockIndex);
             blockPosition = moveBuffer[currentBlockIndex].Dec.P_5 * t_5 +
                             moveBuffer[currentBlockIndex].Dec.P_4 * t_4 +
                             moveBuffer[currentBlockIndex].Dec.P_3 * t_3 +
