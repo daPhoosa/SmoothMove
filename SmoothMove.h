@@ -61,6 +61,7 @@
 
          float setMotionRateOverride(  float scale );
          float setExtrudeRateOverride( float scale );
+         void  setExtrudeVelocityAdvance( float advance );
 
          void junctionSmoothingOff();
          void junctionSmoothingOn();
@@ -162,6 +163,7 @@
 
          float extrudeProgPos, extrudeMachPos;
          float extrudeVel, extrudeAccel;
+         float extrudeVelocityAdvance;
 
          volatile float blockPosition, velocityNow;
 
