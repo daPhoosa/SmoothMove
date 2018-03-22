@@ -487,7 +487,12 @@ float SmoothMove::getExtrudeLocationMM()
    }
    else  // extrude while moving
    {
-      return moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
+      float e = moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
+      if( moveBuffer[currentBlockIndex].extrudeScaleFactor > 0.0001f ) // apply velocity compensation when extruding forward
+      {
+         e += extrudeVelocityAdvance * velocityNow;
+      }
+      return e;
    }
 }
 
