@@ -124,10 +124,10 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                             moveBuffer[currentBlockIndex].Acc.P_4 * t_4 +
                             moveBuffer[currentBlockIndex].Acc.P_3 * t_3 +
                             moveBuffer[currentBlockIndex].Acc.C_1 * t;
-            velocityNow = moveBuffer[currentBlockIndex].Acc.V_4 * t_4 +
-                          moveBuffer[currentBlockIndex].Acc.V_3 * t_3 +
-                          moveBuffer[currentBlockIndex].Acc.V_2 * t_2 +
-                          moveBuffer[currentBlockIndex].Acc.C_1 * t;
+            velocityNow   = moveBuffer[currentBlockIndex].Acc.V_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Acc.V_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Acc.V_2 * t_2 +
+                            moveBuffer[currentBlockIndex].Acc.C_1;
             break;
 
          case 1 : // state: Const Vel
@@ -145,10 +145,10 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                             moveBuffer[currentBlockIndex].Dec.P_3 * t_3 +
                             moveBuffer[currentBlockIndex].Dec.C_1 * t   +
                             moveBuffer[currentBlockIndex].velEndPoint;
-            velocityNow = moveBuffer[currentBlockIndex].Dec.V_4 * t_4 +
-                          moveBuffer[currentBlockIndex].Dec.V_3 * t_3 +
-                          moveBuffer[currentBlockIndex].Dec.V_2 * t_2 +
-                          moveBuffer[currentBlockIndex].Dec.C_1 * t;
+            velocityNow   = moveBuffer[currentBlockIndex].Dec.V_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Dec.V_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Dec.V_2 * t_2 +
+                            moveBuffer[currentBlockIndex].Dec.C_1;
             break;
 
          case 3 : // state: Dwell
