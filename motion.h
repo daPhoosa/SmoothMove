@@ -110,30 +110,45 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
          }
       }
 
-      float dt, dt_Sq;
-      int start;
+      float t = float(deltaTime) * (1.0f / 1000000.0f); // time in seconds
+      float t_2, t_3, t_4, t_5;
 
       switch(segmentIndex)  // compute current position in the block
       {
          case 0 : // state: Accel
-            dt = float(deltaTime) * 0.000001f;
-            dt_Sq = dt * dt;
-            start = previousBlockIndex(currentBlockIndex);
-            blockPosition = 0.5f * moveBuffer[currentBlockIndex].maxAccel * dt_Sq + xVel[start] * dt;
-            velocityNow = moveBuffer[currentBlockIndex].maxAccel * dt + xVel[start];
+            t_2 = t * t;
+            t_3 = t * t_2;
+            t_4 = t * t_3;
+            t_5 = t * t_4;
+            blockPosition = moveBuffer[currentBlockIndex].Acc.P_5 * t_5 +
+                            moveBuffer[currentBlockIndex].Acc.P_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Acc.P_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Acc.C_1 * t;
+            velocityNow   = moveBuffer[currentBlockIndex].Acc.V_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Acc.V_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Acc.V_2 * t_2 +
+                            moveBuffer[currentBlockIndex].Acc.C_1;
             break;
 
          case 1 : // state: Const Vel
-            dt = float(deltaTime) * 0.000001f;
-            blockPosition = moveBuffer[currentBlockIndex].targetVel * dt + moveBuffer[currentBlockIndex].accelEndPoint;
+            blockPosition = moveBuffer[currentBlockIndex].targetVel * t + moveBuffer[currentBlockIndex].accelEndPoint;
             velocityNow = moveBuffer[currentBlockIndex].targetVel;
             break;
 
          case 2 : // state: Decel
-            dt = float(deltaTime) * 0.000001f;
-            dt_Sq = dt * dt;
-            blockPosition = -0.5f * moveBuffer[currentBlockIndex].maxAccel * dt_Sq + moveBuffer[currentBlockIndex].peakVel * dt + moveBuffer[currentBlockIndex].velEndPoint;
-            velocityNow = -moveBuffer[currentBlockIndex].maxAccel * dt + moveBuffer[currentBlockIndex].peakVel;
+            t_2 = t * t;
+            t_3 = t * t_2;
+            t_4 = t * t_3;
+            t_5 = t * t_4;
+            blockPosition = moveBuffer[currentBlockIndex].Dec.P_5 * t_5 +
+                            moveBuffer[currentBlockIndex].Dec.P_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Dec.P_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Dec.C_1 * t   +
+                            moveBuffer[currentBlockIndex].velEndPoint;
+            velocityNow   = moveBuffer[currentBlockIndex].Dec.V_4 * t_4 +
+                            moveBuffer[currentBlockIndex].Dec.V_3 * t_3 +
+                            moveBuffer[currentBlockIndex].Dec.V_2 * t_2 +
+                            moveBuffer[currentBlockIndex].Dec.C_1;
             break;
 
          case 3 : // state: Dwell
@@ -152,7 +167,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
    if( blockCount > 1 && !moveBuffer[prevBlock].dwell )
    {
-      float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
+      float prevBlockDist = moveBuffer[prevBlock].length - junctionRadius;
 
       int bCount = blockCount;
 
@@ -165,7 +180,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
       float x1, y1, z1;
       float x2, y2, z2;
-      getPos( x1, y1, z1, index, cornerRoundDist );
+      getPos( x1, y1, z1, index, junctionRadius );
       getPos( x2, y2, z2, prevBlock, prevBlockDist );
       float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate
 
@@ -174,7 +189,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
       z1 -= z2;
       float pointDistSq = x1 * x1 + y1 * y1 + z1 * z1;
 
-      float radius = sqrtf( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
+      float radius = sqrtf( pointDistSq * junctionRadiusSq / ( 4.00001f * junctionRadiusSq - pointDistSq ));
 
       float junctionVelSq = maxAccel * radius;
 
@@ -199,13 +214,13 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 }
 
 
-void SmoothMove::constAccelTrajectory()
+void SmoothMove::minJerkTrajectory()
 {
    /*
       Block Diagram:
       [current block][  ][  ][  ][  ][  ][newest block]
       ---direction of execution--->
-      [current block][  ][  ][  ][  ][  ][start][exit]       
+      [current block][  ][  ][  ][  ][  ][start][exit]
    */
 
    int exit  = newBlockIndex;
@@ -230,15 +245,13 @@ void SmoothMove::constAccelTrajectory()
 
       float distToDeltaVel = (xVel_Sq[start] - xVel_Sq[exit]) * moveBuffer[exit].accelInverseHalf;
 
-      if(distToDeltaVel > moveBuffer[exit].length)
+      if(distToDeltaVel > moveBuffer[exit].length) // not enough room to decel from startVel to endVel
       {
-         // not enough room to decel from startVel to endVel
          xVel_Sq[start] = xVel_Sq[exit] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set startVel lower
          xVel[start]    = sqrtf(xVel_Sq[start]);
       }
-      else if(distToDeltaVel < -moveBuffer[exit].length)
+      else if(distToDeltaVel < -moveBuffer[exit].length) // not enough room to accel from startVel to endVel
       {
-         // not enough room to accel from startVel to endVel
          xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set exitVel lower
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
       }
@@ -261,10 +274,8 @@ void SmoothMove::constAccelTrajectory()
 
       float distToDeltaVel = (xVel_Sq[exit] - xVel_Sq[start]) * moveBuffer[exit].accelInverseHalf;
 
-      if(distToDeltaVel > moveBuffer[exit].length)
+      if(distToDeltaVel > moveBuffer[exit].length) // not enough room to accel from startVel to endVel
       {
-         // not enough room to accel from startVel to endVel
-
          xVel_Sq[exit] = xVel_Sq[start] + moveBuffer[exit].accelDouble * moveBuffer[exit].length; // set exitVel lower
          xVel[exit]    = sqrtf(xVel_Sq[exit]);
 
@@ -279,10 +290,8 @@ void SmoothMove::constAccelTrajectory()
          moveBuffer[exit].decelTime     = 0;
          moveBuffer[exit].decelLength   = 0.0f;
       }
-      else
+      else  // Compute accel and decel
       {
-         // Compute accel and decel
-
          moveBuffer[exit].decelLength   = ( moveBuffer[exit].targetVel_Sq - xVel_Sq[exit]  ) * moveBuffer[exit].accelInverseHalf;
 
          moveBuffer[exit].accelEndPoint = ( moveBuffer[exit].targetVel_Sq - xVel_Sq[start] ) * moveBuffer[exit].accelInverseHalf;
@@ -302,10 +311,8 @@ void SmoothMove::constAccelTrajectory()
             moveBuffer[exit].velTime   = uint32_t(( moveBuffer[exit].velEndPoint - moveBuffer[exit].accelEndPoint) / moveBuffer[exit].targetVel * 1000000.0f);
             moveBuffer[exit].decelTime = uint32_t(( moveBuffer[exit].targetVel - xVel[exit]  ) * moveBuffer[exit].accelInverse * 1000000.0f);
          }
-         else
+         else  // peaked acceleration, targetVel not reached
          {
-            // peaked acceleration, targetVel not reached
-
             float halfExcessLength = constVelLength * 0.5f;  // negative
 
             moveBuffer[exit].accelEndPoint += halfExcessLength;
@@ -322,6 +329,16 @@ void SmoothMove::constAccelTrajectory()
 
       lookAheadTime += moveBuffer[exit].accelTime + moveBuffer[exit].velTime + moveBuffer[exit].decelTime;
 
+      if( moveBuffer[exit].accelTime > 0 ) // generate min jerk coefficients for acceleration
+      {
+         getTransCoef( moveBuffer[exit].accelTime, moveBuffer[exit].accelEndPoint, xVel[start], moveBuffer[exit].peakVel, moveBuffer[exit].Acc );
+      }
+
+      if( moveBuffer[exit].decelTime > 0 ) // generate min jerk coefficients for deceleration
+      {
+         getTransCoef( moveBuffer[exit].decelTime, moveBuffer[exit].decelLength, moveBuffer[exit].peakVel, xVel[exit], moveBuffer[exit].Dec );
+      }
+
       moveBuffer[exit].ready = true;
 
       // move forward in block queue
@@ -334,18 +351,6 @@ void SmoothMove::constAccelTrajectory()
 
 void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to get current cartesian position
 {
-   /*
-      TIME TESTS
-                     Teensy 3.2     Teensy 3.5
-      Min               7us            2us         (middle of a line segment when no smoothing is happening)
-
-      Avg (linear)      13us           2us         (only linear moves, geometry dependent)
-      Max (linear)      34us           6us         (time during line to line smoothing)
-
-      Avg (mixed)       30us           15us        (mixed linear and arc moves, geometry dependent)
-      Max (Arc)         300us          200us       (time during arc to arc transitions)
-
-   */
 
    if(blockCount == 0) // if no blocks are queued up, return current end point
    {
@@ -376,7 +381,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       smoothingIndexStart = previousBlockIndex(smoothingIndexStart);
       smoothingPosStart  += moveBuffer[smoothingIndexStart].length;
    }
-   
+
    while( smoothingPosEnd > moveBuffer[smoothingIndexEnd].length ) // find end point in future blocks
    {
       smoothingPosEnd  -= moveBuffer[smoothingIndexEnd].length;
@@ -394,7 +399,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
 
    getPos( x,  y,  z,  smoothingIndexStart, smoothingPosStart); // smoothing start position
    getPos( x2, y2, z2, smoothingIndexEnd,   smoothingPosEnd);   // smoothing end position is in this block
-   
+
    x = ( x + x2 ) * 0.5f;  // average two smoothing points
    y = ( y + y2 ) * 0.5f;
    z = ( z + z2 ) * 0.5f;
@@ -479,6 +484,121 @@ float SmoothMove::getExtrudeLocationMM()
    }
    else  // extrude while moving
    {
-      return moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
+      float e = moveBuffer[currentBlockIndex].extrudeScaleFactor * blockPosition + extrudeMachPos;
+      if( moveBuffer[currentBlockIndex].extrudeScaleFactor > 0.0001f ) // apply velocity compensation when extruding forward
+      {
+         e += extrudeVelocityAdvance * velocityNow;
+      }
+      return e;
    }
+}
+
+
+void SmoothMove::getTransCoef( const uint32_t & time, const float & pos_end, const float & vel_start, const float & vel_end, min_jerk_coeffients_t & X )
+{
+
+   float t = float(time) * (1.0f / 1000000.0f); // convert from us to s
+
+   float t_2 = t * t;
+   float t_3 = t * t_2;
+   float t_4 = t * t_3;
+   float t_5 = t * t_4;
+
+   /*
+   // Agugmented matrix
+   float M[6][7] = {{20.0f*t_3, 12.0f*t_2,  6.0f*t,   2.0f, 0.0f, 0.0f, 0.0f},// C_5 - acceleration end
+                    { 5.0f*t_4,  4.0f*t_3, 3.0*t_2, 2.0f*t, 1.0f, 0.0f, vel_end},   // C_4 - vel end
+                    {      t_5,       t_4,     t_3,    t_2,    t, 1.0f, pos_end},   // C_3 - pos end
+                    {     0.0f,      0.0f,    0.0f,   2.0f, 0.0f, 0.0f, 0.0f},      // C_2 - acceleration start
+                    {     0.0f,      0.0f,    0.0f,   0.0f, 1.0f, 0.0f, vel_start}, // C_1 - vel start
+                    {     0.0f,      0.0f,    0.0f,   0.0f, 0.0f, 1.0f, 0.0f}};     // C_0 - pos start
+   */
+   // eliminate trivial colums and rows
+   float M[4][5] = {{ 20.0f*t_3, 12.0f*t_2,  6.0f*t, 0.0f, 0.0f      },  // C_5 - acceleration end
+                    {  5.0f*t_4,  4.0f*t_3, 3.0*t_2, 1.0f, vel_end   },  // C_4 - vel end
+                    {       t_5,       t_4,     t_3,    t, pos_end   },  // C_3 - pos end
+                    {      0.0f,      0.0f,    0.0f, 1.0f, vel_start }}; // C_1 - vel start
+
+   // *** Perform row operation on the augmented matrix to solve for coefficients ***
+   //       (loops are manually un-rolled for optimizations and increased speed)
+   float scale;
+
+   // Scale 1st line
+   scale = 1.0f / M[0][0];
+   M[0][0]  = 1.0f;
+   M[0][1] *= scale;
+   M[0][2] *= scale;
+   M[0][3] *= scale;
+   M[0][4] *= scale;
+
+   // eliminate 1st coef on 2nd row
+   M[1][4] -= M[1][0] * M[0][4];
+   M[1][3] -= M[1][0] * M[0][3];
+   M[1][2] -= M[1][0] * M[0][2];
+   M[1][1] -= M[1][0] * M[0][1];
+   M[1][0]  = 0.0f;
+
+   // Scale 2nd row
+   scale = 1.0f / M[1][1];
+   M[1][1]  = 1.0f;
+   M[1][2] *= scale;
+   M[1][3] *= scale;
+   M[1][4] *= scale;
+
+   // eliminate 1st coef on 3rd row
+   M[2][4] -= M[2][0] * M[0][4];
+   M[2][3] -= M[2][0] * M[0][3];
+   M[2][2] -= M[2][0] * M[0][2];
+   M[2][1] -= M[2][0] * M[0][1];
+   M[2][0]  = 0.0f;
+
+   // eliminate 2nd coef on 3rd row
+   M[2][4] -= M[2][1] * M[1][4];
+   M[2][3] -= M[2][1] * M[1][3];
+   M[2][2] -= M[2][1] * M[1][2];
+   M[2][1]  = 0.0f;
+
+   // Scale 3rd row
+   scale = 1.0f / M[2][2];
+   M[2][2]  = 1.0f;
+   M[2][3] *= scale;
+   M[2][4] *= scale;
+
+   // eliminate 2nd coef on 1st row
+   M[0][4] -= M[0][1] * M[1][4];
+   M[0][3] -= M[0][1] * M[1][3];
+   M[0][2] -= M[0][1] * M[1][2];
+   M[0][1]  = 0.0f;
+
+   // eliminate 3rd coef on 1st row
+   M[0][4] -= M[0][2] * M[2][4];
+   M[0][3] -= M[0][2] * M[2][3];
+   M[0][2]  = 0.0f;
+
+   // eliminate 3rd coef on 2nd row
+   M[1][4] -= M[1][2] * M[2][4];
+   M[1][3] -= M[1][2] * M[2][3];
+   M[1][2]  = 0.0f;
+
+   // eliminate 4th coef on 1st row
+   M[0][4] -= M[0][3] * M[3][4];
+   M[0][3]  = 0.0f;
+
+   // eliminate 4th coef on 2nd row
+   M[1][4] -= M[1][3] * M[3][4];
+   M[1][3]  = 0.0f;
+
+   // eliminate 4th coef on 3rd row
+   M[2][4] -= M[2][3] * M[3][4];
+   M[2][3]  = 0.0f;
+
+   X.P_5 = M[0][4];
+   X.P_4 = M[1][4];
+   X.P_3 = M[2][4];
+
+   X.C_1 = M[3][4];
+
+   X.V_4 = M[0][4] * 5.0f;
+   X.V_3 = M[1][4] * 4.0f;
+   X.V_2 = M[2][4] * 3.0f;
 }

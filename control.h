@@ -145,3 +145,16 @@ void SmoothMove::setCornerRounding( float _cornerRounding )
    cornerRoundDist     = max( _cornerRounding, 0.001f );
    cornerRoundDistSq   = cornerRoundDist * cornerRoundDist;
 }
+
+
+void SmoothMove::setJunctionVelRad( float t_r )
+{
+   junctionRadius     = max( t_r, 0.001f );
+   junctionRadiusSq   = t_r * t_r;
+}
+
+
+void SmoothMove::setExtrudeVelocityAdvance( float advance )  // units of (mm / mm/s x 1000)
+{
+   extrudeVelocityAdvance = advance / 1000.0f;
+}

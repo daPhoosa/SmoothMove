@@ -55,12 +55,14 @@
          void setParamXY( float accel, float maxVel );
          void setParamZ( float accel, float maxVel );
          void setCornerRounding( float _cornerRounding );
+         void setJunctionVelRad( float t_r );
 
          void startMoving();
          void abortMotion();
 
          float setMotionRateOverride(  float scale );
          float setExtrudeRateOverride( float scale );
+         void  setExtrudeVelocityAdvance( float advance );
 
          void junctionSmoothingOff();
          void junctionSmoothingOn();
@@ -112,13 +114,20 @@
 
          */
 
+         const static int BUFFER_COUNT = 100;
+
          enum moveType_t {
             Linear,
             ArcCW,
             ArcCCW
          };
 
-         const static int BUFFER_COUNT = 100;
+         struct min_jerk_coeffients_t
+         {
+            float P_5, P_4, P_3; // position coef
+            float C_1;           // pos and vel coef
+            float V_4, V_3, V_2; // velocity coef
+         };
 
          struct block_t
          {
@@ -134,6 +143,9 @@
 
             float accelEndPoint, velEndPoint, decelLength; // length of each segement
             uint32_t accelTime,  velTime,     decelTime,  dwell;   // time to complete each segement
+
+            min_jerk_coeffients_t Acc;  // acceleration and deceleration transision polynomial coefficients
+            min_jerk_coeffients_t Dec; 
 
             float extrudeScaleFactor, extrudeDist;
             uint32_t minExtrudeTime;
@@ -152,6 +164,7 @@
 
          float extrudeProgPos, extrudeMachPos;
          float extrudeVel, extrudeAccel;
+         float extrudeVelocityAdvance;
 
          volatile float blockPosition, velocityNow;
 
@@ -160,6 +173,7 @@
          float X_end, Y_end, Z_end;
 
          float cornerRoundDist, cornerRoundDistSq;
+         float junctionRadius,  junctionRadiusSq;
 
          float maxAccel_XY, accelInverse_XY, accelInverseHalf_XY, accelDouble_XY;
          float maxVel_XY;
@@ -177,7 +191,7 @@
 
 
          // *** PRIVATE FUNCTIONS ***
-         void constAccelTrajectory();
+         void minJerkTrajectory();
 
          int addBaseBlock( const float & _x, const float & _y, const float & _z );
          int AddNewBlockIndex();
@@ -197,6 +211,8 @@
 
          void setBlockAccel( int index );
          void setBlockFeed( int index );
+
+         void getTransCoef( const uint32_t & time, const float & pos_end, const float & vel_start, const float & vel_end, min_jerk_coeffients_t & X );
 
          void displayBlock( int i );
 
