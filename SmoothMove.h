@@ -55,6 +55,7 @@
          void setParamXY( float accel, float maxVel );
          void setParamZ( float accel, float maxVel );
          void setCornerRounding( float _cornerRounding );
+         void setJunctionVelRad( float t_r );
 
          void startMoving();
          void abortMotion();
@@ -172,6 +173,7 @@
          float X_end, Y_end, Z_end;
 
          float cornerRoundDist, cornerRoundDistSq;
+         float junctionRadius,  junctionRadiusSq;
 
          float maxAccel_XY, accelInverse_XY, accelInverseHalf_XY, accelDouble_XY;
          float maxVel_XY;

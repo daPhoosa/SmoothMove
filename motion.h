@@ -167,7 +167,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
    if( blockCount > 1 && !moveBuffer[prevBlock].dwell )
    {
-      float prevBlockDist = moveBuffer[prevBlock].length - cornerRoundDist;
+      float prevBlockDist = moveBuffer[prevBlock].length - junctionRadius;
 
       int bCount = blockCount;
 
@@ -180,7 +180,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
 
       float x1, y1, z1;
       float x2, y2, z2;
-      getPos( x1, y1, z1, index, cornerRoundDist );
+      getPos( x1, y1, z1, index, junctionRadius );
       getPos( x2, y2, z2, prevBlock, prevBlockDist );
       float maxAccel = min( moveBuffer[index].maxAccel, moveBuffer[prevBlock].maxAccel ); // use lower acceleration rate
 
@@ -189,7 +189,7 @@ void SmoothMove::setMaxStartVel(const int & index)  // Junction Velocity
       z1 -= z2;
       float pointDistSq = x1 * x1 + y1 * y1 + z1 * z1;
 
-      float radius = sqrtf( pointDistSq * cornerRoundDistSq / ( 4.00001f * cornerRoundDistSq - pointDistSq ));
+      float radius = sqrtf( pointDistSq * junctionRadiusSq / ( 4.00001f * junctionRadiusSq - pointDistSq ));
 
       float junctionVelSq = maxAccel * radius;
 
