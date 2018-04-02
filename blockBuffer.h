@@ -288,6 +288,8 @@ void SmoothMove::removeOldBlock()
 {
    if(blockCount > 0) // don't allow negative block counts
    {
+      //displayBlock( currentBlockIndex );
+
       blockPosition -= moveBuffer[currentBlockIndex].length;
 
       if( abs(moveBuffer[currentBlockIndex].extrudeDist) > 0.0001f && moveBuffer[currentBlockIndex].length > 0.0f ) // dont double count extrude for static extrudes
@@ -339,6 +341,9 @@ int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of t
 
 bool SmoothMove::blockQueueComplete()
 {
+   //Serial.print(blockCount);Serial.print("\t");Serial.println(segmentIndex);
+   if( motionStopped )  return true;
+
    if( blockCount >  1 ) return false; // multiple blocks in queue
 
    if( blockCount == 0 ) return true;
@@ -363,28 +368,28 @@ void SmoothMove::displayBlock( int i )
    //Serial.print(moveBuffer[i].velEndPoint,   2); Serial.print("\t");
    //Serial.print(moveBuffer[i].length,        2); Serial.print("\t");
 
-   //Serial.print(moveBuffer[i].accelTime); Serial.print("\t");
-   //Serial.print(moveBuffer[i].velTime  ); Serial.print("\t");
-   //Serial.print(moveBuffer[i].decelTime); Serial.print("\t");
+   Serial.print(moveBuffer[i].accelTime); Serial.print("\t");
+   Serial.print(moveBuffer[i].velTime  ); Serial.print("\t");
+   Serial.print(moveBuffer[i].decelTime); Serial.print("\t");
 
-   Serial.print(moveBuffer[i].accelEndPoint, 2);                             Serial.print("\t");
-   Serial.print(moveBuffer[i].velEndPoint - moveBuffer[i].accelEndPoint, 2); Serial.print("\t");
-   Serial.print(moveBuffer[i].length - moveBuffer[i].velEndPoint,        2); Serial.print("\t");
+   Serial.print(moveBuffer[i].accelEndPoint, 3);                             Serial.print("\t");
+   Serial.print(moveBuffer[i].velEndPoint - moveBuffer[i].accelEndPoint, 3); Serial.print("\t");
+   Serial.print(moveBuffer[i].decelLength,                               3); Serial.print("\t");
 
-   Serial.print(moveBuffer[i].targetVel, 1);     Serial.print("\t");
+   //Serial.print(moveBuffer[i].targetVel, 1);     Serial.print("\t");
    Serial.print(xVel[previousBlockIndex(i)], 1); Serial.print("\t");  // start vel
    Serial.print(moveBuffer[i].peakVel, 1);       Serial.print("\t");  // peak vel
    Serial.print(xVel[i], 1);                     Serial.print("\t");  // exit vel
 
-   Serial.print(moveBuffer[i].X_start); Serial.print(" ");
-   Serial.print(moveBuffer[i].Y_start); Serial.print(" ");
-   Serial.print(moveBuffer[i].Z_start); Serial.print("\t");
+   //Serial.print(moveBuffer[i].X_start); Serial.print(" ");
+   //Serial.print(moveBuffer[i].Y_start); Serial.print(" ");
+   //Serial.print(moveBuffer[i].Z_start); Serial.print("\t");
 
    //Serial.print(X_end); Serial.print(" ");
    //Serial.print(Y_end); Serial.print(" ");
    //Serial.print(Z_end); Serial.print("\t");
 
-   Serial.print(moveBuffer[i].dwell);
+   if(moveBuffer[i].dwell) Serial.print(moveBuffer[i].dwell);
 
    Serial.println("");
 }

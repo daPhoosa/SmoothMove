@@ -26,7 +26,7 @@ void SmoothMove::startMoving() //
 
    blockCount    = 0; // "forget" all previous blocks
    lookAheadTime = 0;
-   segmentIndex  = 0;
+   segmentIndex  = 3;
    segmentTime   = 0;
 
    addRapid_Block( X_end, Y_end, Z_end ); // add dummy block at current position, zero length
@@ -94,7 +94,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                segmentIndex = 3;
                break;
 
-            case 3 : // wait for next block
+            case 3 : // switch to NEXT block
                if( blockCount > 1 &&                                       // another block must exist
                    !moveBuffer[currentBlockIndex].staticExtrude &&         // wait until static extrude is complete
                    moveBuffer[nextBlockIndex(currentBlockIndex)].ready )   // wait until next block is ready
@@ -102,7 +102,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                   segmentIndex = 4;
                   segmentTime  = 0;
                }
-               else
+               else  // WAIT for next block
                {
                   segmentTime = 1000UL; // force 1ms of dwell before checking again
                }
@@ -378,17 +378,32 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
 
    while( smoothingPosStart < 0.0f )   // find start point in previous blocks
    {
-      smoothingIndexStart = previousBlockIndex(smoothingIndexStart);
-      smoothingPosStart  += moveBuffer[smoothingIndexStart].length;
+      int i = previousBlockIndex(smoothingIndexStart);
+      if( !moveBuffer[i].dwell ) // don't smooth across a dwell
+      {
+         smoothingIndexStart = i;
+         smoothingPosStart  += moveBuffer[smoothingIndexStart].length;
+      }
+      else
+      {
+         smoothingPosStart = 0.0f; // stop at beginning of block
+      }
    }
 
    while( smoothingPosEnd > moveBuffer[smoothingIndexEnd].length ) // find end point in future blocks
    {
-      smoothingPosEnd  -= moveBuffer[smoothingIndexEnd].length;
-      smoothingIndexEnd = nextBlockIndex(smoothingIndexEnd);
+      if( !moveBuffer[smoothingIndexEnd].dwell )
+      {
+         smoothingPosEnd  -= moveBuffer[smoothingIndexEnd].length;
+         smoothingIndexEnd = nextBlockIndex(smoothingIndexEnd);
+      }
+      else
+      {
+         smoothingPosEnd = moveBuffer[smoothingIndexEnd].length; // stop at end of block
+      }
    }
 
-   if( smoothingIndexStart == smoothingIndexEnd ||                  // do not smooth if "far" from junction (both points lie in the current block)
+   if( smoothingIndexStart == smoothingIndexEnd ||                  // do not smooth if both points lie in the current block
        moveBuffer[nextBlockIndex(currentBlockIndex)].fastJunction ) // do not smooth if next junction does not force deceleration
    {
       getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
