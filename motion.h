@@ -376,6 +376,8 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    int smoothingIndexStart = currentBlockIndex;
    int smoothingIndexEnd   = currentBlockIndex;
 
+   
+
    while( smoothingPosStart < 0.0f )   // find start point in previous blocks
    {
       int i = previousBlockIndex(smoothingIndexStart);
@@ -390,8 +392,12 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       }
    }
 
-   while( smoothingPosEnd > moveBuffer[smoothingIndexEnd].length ) // find end point in future blocks
+   int bCnt = blockCount - 1;
+
+   while( smoothingPosEnd > moveBuffer[smoothingIndexEnd].length && bCnt > 0 ) // find end point in future blocks
    {
+      bCnt--;
+
       if( !moveBuffer[smoothingIndexEnd].dwell )
       {
          smoothingPosEnd  -= moveBuffer[smoothingIndexEnd].length;
