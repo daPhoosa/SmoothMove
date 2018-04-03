@@ -50,6 +50,39 @@ void SmoothMove::addRapid_Block( float _x, float _y, float _z )
 
 void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
 {
+   float dx = _x - X_end;
+   float dy = _y - Y_end;
+   float dz = _z - Z_end;
+
+   float length = sqrtf( dx * dx + dy * dy + dz * dz );
+
+   if( length > 0.0001f ) // don't add blocks of zero length
+   {
+      int index = addBaseBlock( _x, _y, _z );
+
+      moveBuffer[index].moveType = Linear;  // feed move G0/G1
+
+      moveBuffer[index].targetVel = constrain( feed * motionFeedOverride, 0.01f, maxVel_XY );  // constrain to reasonable limits 
+
+      moveBuffer[index].length = length;
+
+      float inverseLength = 1.0f / moveBuffer[index].length;
+      moveBuffer[index].X_vector = dx * inverseLength;  // line unit vector
+      moveBuffer[index].Y_vector = dy * inverseLength;
+      moveBuffer[index].Z_vector = dz * inverseLength;
+
+      setBlockAccel( index );
+      setBlockFeed(  index );
+
+      //moveBuffer[index].targetVel_Sq = moveBuffer[index].targetVel * moveBuffer[index].targetVel;  // set in setBlockFeed()
+
+      setMaxStartVel(index);  // set cornering/start speed
+
+      minJerkTrajectory();
+   }
+
+
+   /*
    int index = addBaseBlock( _x, _y, _z );
 
    moveBuffer[index].moveType = Linear;  // feed move G0/G1
@@ -83,6 +116,7 @@ void SmoothMove::addLinear_Block( float _x, float _y, float _z, float feed )
    setMaxStartVel(index);  // set cornering/start speed
 
    minJerkTrajectory();
+   */
 }
 
 
@@ -118,7 +152,7 @@ void SmoothMove::setBlockAccel( int index )
 
 void SmoothMove::setBlockFeed( int index )
 {
-   float velZ = maxVel_Z * motionFeedOverride;
+   float velZ = min(maxVel_Z * motionFeedOverride, maxVel_Z);
 
    if( abs(moveBuffer[index].Z_vector * moveBuffer[index].targetVel) > velZ )
    {
