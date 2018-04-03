@@ -56,6 +56,7 @@
          void setParamZ( float accel, float maxVel );
          void setCornerRounding( float _cornerRounding );
          void setJunctionVelRad( float t_r );
+         void setLegacyJerk( float j );
 
          void startMoving();
          void abortMotion();

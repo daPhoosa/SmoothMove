@@ -158,3 +158,10 @@ void SmoothMove::setExtrudeVelocityAdvance( float advance )  // units of (mm / m
 {
    extrudeVelocityAdvance = advance / 1000.0f;
 }
+
+
+void SmoothMove::setLegacyJerk( float j )    // approximates jerk functionality from Marlin, Reptier and Smoothieware 
+{
+   junctionRadius   = max( j * j * accelInverse_XY, 0.001f );
+   junctionRadiusSq = junctionRadius * junctionRadius;
+}
