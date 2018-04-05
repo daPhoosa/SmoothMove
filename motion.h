@@ -104,6 +104,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                }
                else  // WAIT for next block
                {
+                  moveBuffer[currentBlockIndex].dwell = 1; // mark current block as having had a stop
                   segmentTime = 1000UL; // force 1ms of dwell before checking again
                }
                break;
@@ -360,7 +361,37 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
       return;
    }
 
-   // symetric smoothing
+   // SYMETRIC SMOOTHING
+   if( pathSmoothingOff )          // smoothing turned off
+   {
+      getPos( x, y, z, currentBlockIndex, blockPosition ); // get current position
+      return;
+   }
+
+   float smoothingPosStart = blockPosition;
+   float smoothingPosEnd   = blockPosition;
+
+   int smoothingIndexStart = currentBlockIndex;
+   int smoothingIndexEnd   = currentBlockIndex;
+
+   float d1 = bwdPoint( smoothingPosStart, smoothingIndexStart, cornerRoundDist );
+   float d2 = fwdPoint( smoothingPosEnd, smoothingIndexEnd, d1 );
+   if( d2 < d1 )
+   {
+      smoothingPosStart   = blockPosition;
+      smoothingIndexStart = currentBlockIndex;
+      d1 = bwdPoint( smoothingPosStart, smoothingIndexStart, d2 );
+   }
+
+   /*
+   Serial.print(millis()); Serial.print("\t");
+   Serial.print(moveBuffer[currentBlockIndex].dwell); Serial.print("\t");
+   Serial.print(d1, 3); Serial.print("\t");
+   Serial.print(blockPosition,     3); Serial.print("\t");
+   Serial.println(d2, 3);
+   
+
+   /*
    float smoothingRadius = min( cornerRoundDist, velocityNow * velocityNow * moveBuffer[currentBlockIndex].accelInverseHalf - 0.001f );
 
    if( pathSmoothingOff ||          // smoothing turned off
@@ -377,7 +408,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    int smoothingIndexEnd   = currentBlockIndex;
 
    
-
+   
    while( smoothingPosStart < 0.0f )   // find start point in previous blocks
    {
       int i = previousBlockIndex(smoothingIndexStart);
@@ -408,6 +439,7 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
          smoothingPosEnd = moveBuffer[smoothingIndexEnd].length; // stop at end of block
       }
    }
+   */
 
    if( smoothingIndexStart == smoothingIndexEnd ||                  // do not smooth if both points lie in the current block
        moveBuffer[nextBlockIndex(currentBlockIndex)].fastJunction ) // do not smooth if next junction does not force deceleration
@@ -424,6 +456,56 @@ void SmoothMove::getTargetLocation(float & x, float & y, float & z) // call to g
    x = ( x + x2 ) * 0.5f;  // average two smoothing points
    y = ( y + y2 ) * 0.5f;
    z = ( z + z2 ) * 0.5f;
+}
+
+
+float SmoothMove::fwdPoint( float & pos, int & index, const float dist )   // forward
+{
+   int bCount = blockCount;
+   pos += dist;
+
+   while( pos > moveBuffer[index].length ) // extends past end of block
+   {
+      if( moveBuffer[index].dwell || bCount == 1 ) // dont go past end of block if a dwell, or last block
+      {
+         float d = dist - pos + moveBuffer[index].length;   // distance minus truncated amount
+         pos = moveBuffer[index].length;                 // set position to end of block
+         return d;
+      }
+      else
+      {
+         bCount--;
+         pos -= moveBuffer[index].length;    // position in next block
+         index = nextBlockIndex(index);
+      }
+   }
+   return dist;   // return full distance
+}
+
+
+float SmoothMove::bwdPoint( float & pos, int & index, const float dist )   // backwards
+{
+   float length = 0.0f;
+   pos -= dist;
+
+   while( pos < 0.0f ) // extends before start of block
+   {
+      int i = previousBlockIndex(index);
+      length += moveBuffer[i].length;
+
+      if( moveBuffer[i].dwell ) // dont go past start of block if prev has a dwell
+      {
+         float d = length - pos;   // actual distance
+         pos = 0.0f;               // set position to start of block
+         return d;
+      }
+      else
+      {  
+         index = i;
+         pos += moveBuffer[index].length;    // position in next block
+      }
+   }
+   return dist;   // return full distance
 }
 
 

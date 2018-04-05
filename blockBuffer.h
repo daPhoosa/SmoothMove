@@ -22,7 +22,7 @@
 
 bool SmoothMove::bufferVacancy() // always call this to check for room before adding a new block
 {
-   if( blockCount < 4 ) return true; // try to maintain 4 block look ahead minimum
+   if( blockCount < 3 ) return true; // try to maintain 3 block look ahead minimum
 
    if( blockCount >= BUFFER_COUNT - 4 ) return false; // don't exceed max buffer size, save space for "extra" blocks
 

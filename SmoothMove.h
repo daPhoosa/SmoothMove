@@ -199,12 +199,10 @@
          void removeOldBlock();
 
          int previousBlockIndex( int currentIndex );
-         int previousBlockIndex();
-
-         int previousSegmentIndex( int currentIndex );
-
          int nextBlockIndex( int currentIndex );
-         int nextBlockIndex();
+
+         float fwdPoint( float & pos, int & index, const float dist );
+         float bwdPoint( float & pos, int & index, const float dist );
 
          void setMaxStartVel( const int & index );
          void getPos( float & x, float & y, float & z, int index, float position );
