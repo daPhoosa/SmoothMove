@@ -115,7 +115,7 @@
 
          */
 
-         const static int BUFFER_COUNT = 100;
+         const static int BUFFER_COUNT = 6;
 
          enum moveType_t {
             Linear,

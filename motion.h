@@ -222,6 +222,12 @@ void SmoothMove::minJerkTrajectory()
       [current block][  ][  ][  ][  ][  ][newest block]
       ---direction of execution--->
       [current block][  ][  ][  ][  ][  ][start][exit]
+
+      STRATEGY:
+         - Use constant acceleration to compute time intervals and velocity changes
+            - Traverse block queue backwards and reduce velocities at block borders to insure adequate acc/dec time 
+            - Traverse block queue forward and compute acc/vel/dec times and distances
+         - Compute minimum jerk s-curve transitions to fit the acceleration and deceleration intervals
    */
 
    int exit  = newBlockIndex;
@@ -234,7 +240,7 @@ void SmoothMove::minJerkTrajectory()
 
    for( int i = blockCount - 2; i > 0 ; i-- )
    {
-      // iterate through the active blocks backwards (newest to oldest)
+      // Iterate through the active blocks backwards (newest to oldest)
       //    On the first pass, only border velocities are changed
       //    These can only be made slower, never faster
       //    Reminder: the current (oldest) block should not be adjusted
@@ -268,8 +274,7 @@ void SmoothMove::minJerkTrajectory()
 
    for( int i = blockCount - 1; i > 0 ; i-- )
    {
-      //Serial.print( exit );Serial.print(" ");
-      // iterate forward
+      // Iterate forward
       //    check and set boundary velocities
       //    set position and time variables
 
