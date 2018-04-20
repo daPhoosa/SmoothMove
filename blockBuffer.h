@@ -344,12 +344,9 @@ int SmoothMove::previousBlockIndex( int currentIndex ) // against direction of t
 
 bool SmoothMove::blockQueueComplete()
 {
-   //Serial.print(blockCount);Serial.print("\t");Serial.println(segmentIndex);
-   if( motionStopped )  return true;
-
    if( blockCount >  1 ) return false; // multiple blocks in queue
 
-   if( blockCount == 0 ) return true;
+   if( blockCount == 0 || motionStopped ) return true;
 
    if(blockCount  == 1   &&   // on last block
       segmentIndex > 2   &&   // movement complete
