@@ -351,8 +351,9 @@ bool SmoothMove::blockQueueComplete()
 
    if( blockCount == 0 ) return true;
 
-   if(blockCount  == 1 &&      // on last block
-      segmentIndex > 2 &&      // movement & dwell complete
+   if(blockCount  == 1   &&   // on last block
+      segmentIndex > 2   &&   // movement complete
+      segmentTime == 999 &&   // dwell complete
       !moveBuffer[currentBlockIndex].staticExtrude) // extrude complete
    {
       return true;

@@ -105,7 +105,7 @@ void SmoothMove::advancePostion() // this moves forward along the acc/dec trajec
                else  // WAIT for next block
                {
                   moveBuffer[currentBlockIndex].dwell = 1; // mark current block as having had a stop
-                  segmentTime = 1000UL; // force 1ms of dwell before checking again
+                  segmentTime = 999UL; // force 1ms of dwell before checking again ( 999 is a special number used in blockQueueComplete() )
                }
                break;
          }
